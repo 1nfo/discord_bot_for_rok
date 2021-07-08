@@ -2,7 +2,7 @@ import logging as _logging
 
 from settings import get as _get
 
-LOG_LEVEL = _logging.DEBUG
+LOG_LEVEL = _logging.INFO
 
 DISCORD_TOKEN = _get('DISCORD_TOKEN')
 COMMAND_PREFIX = '!'
@@ -13,9 +13,9 @@ DECLINED_EMOJI = '👎'
 SUCCEED_EMOJI = '✅'
 FAILURE_EMOJI = '❌'
 
-DM_COMMAND_MY_KILL_ENABLED = True
-DM_COMMAND_MY_SCORE_ENABLED = True
-DM_COMMAND_MY_HONOR_ENABLED = True
+DM_COMMAND_MY_KILL_ENABLED = False
+DM_COMMAND_MY_SCORE_ENABLED = False
+DM_COMMAND_MY_HONOR_ENABLED = False
 
 GOOGLE_SERVICE_ACCOUNT_INFO = {
     "type": "service_account",

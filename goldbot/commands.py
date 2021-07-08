@@ -167,6 +167,15 @@ async def etl(ctx):
     await ctx.send('finished ETL')
 
 
+@bot.command("test", help="test")
+@commands.is_owner()
+async def test(ctx, *, arg):
+    try:
+        await ctx.send(str(eval(arg)))
+    except Exception as e:
+        await ctx.send(str(e))
+
+
 def _format_message(ctx, **kwargs):
     lines_to_send = [ctx.message.author.mention]
 
