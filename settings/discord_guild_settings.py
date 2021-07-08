@@ -11,10 +11,6 @@ class GuildSettings:
                 else:
                     return i
 
-    @classmethod
-    def get_officer_roles(cls):
-        return [s.officer_role_id for s in cls._instances]
-
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
         self._instances.append(self)
@@ -22,6 +18,20 @@ class GuildSettings:
     def get_channel(self, target):
         return self.channels[target]
 
+
+GuildSettings(
+    id=809851791265103913,
+    name='kingdom',
+    officer_role_id=809851791294201878,
+    approver_role_id=809851791294201878,
+    request_role_id=809851791294201876,
+    channels={
+        'linkme': 862247497594175488,
+        'mykill': 862247648428687360,
+        'myhonor': 862247772165636096,
+        'myscore': 862247848708276234,
+    },
+)
 
 GuildSettings(
     id=796434423263395850,

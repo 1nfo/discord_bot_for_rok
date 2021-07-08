@@ -1,15 +1,13 @@
 import locale
 import logging
 
-import discord
 from discord.ext import commands
 
 import settings
 from models import Player, IdentityLinkage, Identity, UsedName, Alliance
-from settings.discord_guild_settings import GuildSettings
 from transactions.players import create_new_player, update_name
 from .core import bot
-from .utils import fuzzy_match, any_channels, has_attachment, enabled_by
+from .utils import fuzzy_match, limit_command_to_pm_or_bot_channel, has_attachment, enabled_by, officer_only
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
@@ -17,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 @bot.command("whois", help="check member info by name or id.")
-@commands.check(any_channels(settings.get('LISTENING_CHANNELS')))
+@limit_command_to_pm_or_bot_channel
 async def whois(ctx, *, name):
     if name.isdigit():
         q = Player.filter(gov_id=name)
@@ -53,7 +51,7 @@ async def whois(ctx, *, name):
 
 
 @bot.command('listnote', help="list all the notes of one player")
-@commands.check(any_channels(settings.get('LISTENING_CHANNELS')))
+@limit_command_to_pm_or_bot_channel
 async def list_note(ctx, gov_id, type_name=''):
     player = Player.get_or_none(gov_id=gov_id)
     if not player:
@@ -68,8 +66,8 @@ async def list_note(ctx, gov_id, type_name=''):
 
 
 @bot.command("introduce", help="[Officer Only]add new member info")
-@commands.has_any_role(GuildSettings.get_officer_roles())
-@commands.check(any_channels(settings.get('LISTENING_CHANNELS')))
+@officer_only
+@limit_command_to_pm_or_bot_channel
 async def introduce(ctx, gov_id: int, *, name: str):
     if Player.filter(gov_id=gov_id).exists():
         return await ctx.send(f"Error: {gov_id=} already exists.")
@@ -77,8 +75,8 @@ async def introduce(ctx, gov_id: int, *, name: str):
 
 
 @bot.command("rename", help="[Officer Only]update member info")
-@commands.has_any_role(GuildSettings.get_officer_roles())
-@commands.check(any_channels(settings.get('LISTENING_CHANNELS')))
+@officer_only
+@limit_command_to_pm_or_bot_channel
 async def rename(ctx, gov_id, *, name):
     player = Player.get_or_none(gov_id=gov_id)
     if not player:
@@ -137,15 +135,14 @@ async def link_me(ctx, gov_id, name, alliance):
         return await ctx.send(f"{alliance} not found. Use one of them {alliances}")
 
     has_attachment(ctx)
-    channel = _get_forwarding_channel(gov_id, 'kill')
     message = _format_message(ctx, gov_id=gov_id, name=name, alliance=alliance)
-    await channel.send(message)
-
-    return await ctx.send(f"Sent your screen shot in {channel.name}, please wait for officer to verify.")
+    reply = await ctx.message.reply(message)
+    await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
+    await reply.add_reaction(settings.get("DECLINED_EMOJI"))
 
 
 @bot.command("myinfo", help="check member info by name or id.")
-@commands.check(any_channels(settings.get('LISTENING_CHANNELS')))
+@limit_command_to_pm_or_bot_channel
 async def my_info(ctx):
     player = _get_player_by_ctx(ctx)
     if not player:
@@ -190,14 +187,6 @@ def _format_message(ctx, **kwargs):
         lines_to_send.append(ctx.message.attachments[0].url)
 
     return '\n'.join(lines_to_send)
-
-
-def _get_forwarding_channel(gov_id, target):
-    guild_settings = GuildSettings.get(name='test')
-    channel_id = guild_settings.get_channel(target)
-
-    guild = discord.utils.get(bot.guilds, id=guild_settings.id)
-    return discord.utils.get(guild.channels, id=channel_id)
 
 
 def _get_player_by_ctx(ctx, default_to_none=True):

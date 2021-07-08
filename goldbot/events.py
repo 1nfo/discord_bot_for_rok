@@ -22,8 +22,8 @@ async def on_raw_reaction_add(payload):
         return
 
     # ignore reaction on non bot's message
-    reaction_channel = await bot.fetch_channel(payload.channel_id)
-    message = await reaction_channel.fetch_message(payload.message_id)
+    channel = await bot.fetch_channel(payload.channel_id)
+    message = await channel.fetch_message(payload.message_id)
     if message.author != bot.user:
         return
 
@@ -32,6 +32,10 @@ async def on_raw_reaction_add(payload):
         return
     if discord.utils.get(message.reactions, emoji=settings.get("FAILURE_EMOJI")):
         return
+
+    # forward submission
+    if channel.type == discord.ChannelType.private:
+        return await forward_submission.execute(message, payload.emoji.name, bot.guilds)
 
     if payload.guild_id:
         guild_settings = GuildSettings.get(id=payload.guild_id)
@@ -46,5 +50,3 @@ async def on_raw_reaction_add(payload):
             return await approve_submission.execute(message, payload)
         if payload.emoji.name == settings.get("DECLINED_EMOJI"):
             return await decline_submission.execute(message, payload)
-    else:
-        return await forward_submission.execute(message, payload, bot.guilds, reaction_channel)

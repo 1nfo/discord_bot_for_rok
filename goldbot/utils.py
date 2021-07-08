@@ -1,10 +1,12 @@
 from functools import wraps
 
 import discord
+from discord.ext import commands
 from discord.ext.commands import errors
 from fuzzywuzzy import process
 
 import settings
+from settings.discord_guild_settings import GuildSettings
 
 
 def fuzzy_match(name, chooses):
@@ -32,6 +34,24 @@ def any_channels(channel_names, dm_allowed=True):
             return channel.name in channel_names
 
     return predicate
+
+
+@commands.check
+def limit_command_to_pm_or_bot_channel(ctx):
+    channel = ctx.message.channel
+    if channel.type == discord.ChannelType.private:
+        return True
+    if channel.type == discord.ChannelType.text:
+        return channel.name in settings.get('LISTENING_CHANNELS')
+
+
+@commands.check
+def officer_only(ctx):
+    if isinstance(ctx.channel, discord.abc.GuildChannel):
+        guild_setting = GuildSettings.get(id=ctx.guild.id)
+        if not discord.utils.get(ctx.author.roles, id=guild_setting.officer_role_id):
+            return False
+    return True
 
 
 def has_attachment(ctx):
