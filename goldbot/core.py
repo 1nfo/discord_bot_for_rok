@@ -33,16 +33,15 @@ class GoldBot(commands.Bot):
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.CommandNotFound):
             await ctx.send(f'{error}')
-            # await ctx.send_help()
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(f'{error}')
-            # await ctx.send_help(ctx.command)
         elif isinstance(error, commands.BadArgument):
             await ctx.send(f'{error}')
         elif isinstance(error, commands.CheckFailure):
-            logger.error(f'{ctx=}, {error=}')
+            logger.debug(f'{ctx=}, {error=}')
         else:
             logger.exception(f'{ctx=}, {error=}')
+            await ctx.send(f'{error=}')
 
 
 intents = Intents.default()

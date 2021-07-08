@@ -10,11 +10,13 @@ def create_new_note_type(type_name):
 
 
 @db.atomic()
-def add_player_note(player, type_name, content, datetime_created=None):
+def add_player_note(gov_id, type_name, content, datetime_created=None):
+    from .players import get_player
+    player = get_player(gov_id)
     q = NoteType.startswith(type_name)
     c = q.count()
     if c != 1:
-        raise ValueError(f'there are {c} type(s) matched {type_name=}')
+        raise ValueError(f'choose note type from {[n.name for n in NoteType.select()]}')
 
     args = {
         'player': player,

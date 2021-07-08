@@ -1,3 +1,4 @@
+import datetime
 import enum
 
 from peewee import CharField, IntegerField
@@ -17,4 +18,8 @@ class RecordingEvent(Base):
 
     @classmethod
     def current_event(cls):
-        return cls.filter(status=cls.Status.Open).order_by(cls.id.desc()).first()
+        e = cls.filter(status=cls.Status.Open).order_by(cls.id.desc()).first()
+        if e:
+            return e
+        else:
+            cls.create(status=cls.Status.Open, name=f'auto-event {datetime.datetime.now()}')

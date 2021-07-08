@@ -4,10 +4,9 @@ import logging
 import discord
 
 import settings
-from goldbot.features import forward_submission
 from settings.discord_guild_settings import GuildSettings
 from .core import bot
-from .features import approve_submission, decline_submission
+from .features import approve_submission, decline_submission, handle_pm_reaction
 from .utils import has_role
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
@@ -33,9 +32,9 @@ async def on_raw_reaction_add(payload):
     if discord.utils.get(message.reactions, emoji=settings.get("FAILURE_EMOJI")):
         return
 
-    # forward submission
+    # private message reaction
     if channel.type == discord.ChannelType.private:
-        return await forward_submission.execute(message, payload.emoji.name, bot.guilds)
+        return await handle_pm_reaction.execute(message, payload.emoji.name, bot.guilds)
 
     if payload.guild_id:
         guild_settings = GuildSettings.get(id=payload.guild_id)

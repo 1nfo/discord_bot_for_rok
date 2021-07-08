@@ -36,7 +36,7 @@ def pull_930x_kvk3_member_sheet():
     for i in data.index:
         try:
             player = update_player(data[sheet.col_id][i], data[sheet.col_name][i])
-            add_player_note(player, 'INFO', 'Was in KvK3', KVK3_BACK_FILL_DATE)
+            add_player_note(player.id, 'INFO', 'Was in KvK3', KVK3_BACK_FILL_DATE)
         except Exception as e:
             errs.append([data[sheet.col_id][i], str(e)])
 
@@ -74,24 +74,6 @@ def pull_930x_kvk3_kill_sheet():
                 _create_record(player, Record.Type.Power, data[sheet.col_power][i])
         except Exception as e:
             errs.append([data[sheet.col_id][i], str(e)])
-
-    if errs:
-        return errs
-    else:
-        return 'Succeed!'
-
-
-def pull_930x_kvk3_prevkvk_sheet():
-    sheet = settings.get('PREKVK_SHEET')
-    data = get_sheet_data(sheet)
-
-    errs = []
-    for i in data.index:
-        try:
-            player = update_player(data[sheet.col_id][i], data[sheet.col_name][i])
-            add_player_note(player, 'INFO', 'Was in KvK3', datetime_created=KVK3_BACK_FILL_DATE)
-        except Exception as e:
-            errs.append(str(e))
 
     if errs:
         return errs

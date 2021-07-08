@@ -33,8 +33,10 @@ def init_db():
         Alliance.get_or_create(name='WLF!')
         Alliance.get_or_create(name='LEM!')
         Alliance.get_or_create(name='WAB!')
-        NoteType.get_or_create(name='INFORMATION')
+        Alliance.get_or_create(name='others')
+
         NoteType.get_or_create(name='BAN')
+        NoteType.get_or_create(name='INFO')
         NoteType.get_or_create(name='VIOLATION')
         NoteType.get_or_create(name='CONTRIBUTION')
 

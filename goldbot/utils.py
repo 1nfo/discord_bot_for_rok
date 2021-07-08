@@ -31,11 +31,11 @@ def has_attachment(ctx):
 def enabled_by(setting_name):
     def decorator(f):
         @wraps(f)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(self, ctx, *args, **kwargs):
             if not settings.get(setting_name):
-                raise errors.BadArgument(f"Command `{f.__name__}` is disabled now.")
+                raise errors.BadArgument(f"Command `{ctx.command.name}` is disabled now.")
 
-            return await f(*args, **kwargs)
+            return await f(self, ctx, *args, **kwargs)
 
         return wrapper
 

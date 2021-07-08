@@ -10,14 +10,14 @@ from models.recording_event import RecordingEvent
 class Record(Base):
     @enum.unique
     class Type(str, enum.Enum):
-        T4 = 'T4'
-        T5 = 'T5'
-        Death = 'Death'
-        Power = 'Power'
-        Honor = 'Honor'
-        Stage1 = 'Stage1'
-        Stage2 = 'Stage2'
-        Stage3 = 'Stage3'
+        T4 = 't4'
+        T5 = 't5'
+        Death = 'death'
+        Power = 'power'
+        Honor = 'honor'
+        Stage1 = 'stage1'
+        Stage2 = 'stage2'
+        Stage3 = 'stage3'
 
     player = ForeignKeyField(Player, index=True, backref='records')
     event = ForeignKeyField(RecordingEvent)

@@ -5,10 +5,12 @@ import discord
 from discord.ext import commands
 
 import settings
-from models import Player, IdentityLinkage, Identity, UsedName, Alliance
+from models import Player, IdentityLinkage, Identity
 from settings.discord_guild_settings import GuildSettings
-from transactions.players import create_new_player, update_name
-from .utils import fuzzy_match, has_attachment, enabled_by
+from transactions.alliances import list_all_alliance_names, get_alliance
+from transactions.notes import add_player_note
+from transactions.players import create_new_player, update_name, search_player, get_player
+from .utils import has_attachment, enabled_by
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
@@ -24,25 +26,15 @@ class Informative(commands.Cog):
             return channel.name in settings.get('LISTENING_CHANNELS')
 
     @commands.command("whois", help="look up member by name or id.")
-    async def whois(self, ctx, *, name):
-        if name.isdigit():
-            q = Player.filter(gov_id=name)
-        else:
-            q = Player.filter(current_name=name)
-
-        if q.count() != 1:
-            matched = list(filter(lambda x: name.lower() in x.name.lower(), UsedName.select()))
-            if 1 < len(matched) <= 5:
-                return await ctx.send(f"{', '.join(map(lambda x: f'`{x.name}`', matched))}. Who are you talking about?")
-            if len(matched) > 5 or len(matched) == 0:
-                closest_name = fuzzy_match(name, [x.name for x in UsedName.select()])
-                if closest_name:
-                    return await ctx.send(f"Did you mean {closest_name}?")
-                else:
-                    return await ctx.send(f"I don't recognize that name {name}.")
-            player = matched[0].player
-        else:
-            player = q.get()
+    async def whois(self, ctx, *, name_or_id):
+        player, names = search_player(name_or_id)
+        if not player:
+            if len(names) == 0:
+                return await ctx.send(f"I don't recognize that name {name_or_id}.")
+            if len(names) == 1:
+                return await ctx.send(f"Did you mean {names[0]}?")
+            if len(names) > 1:
+                return await ctx.send(f"{', '.join(map(lambda x: f'`{x}`', names))} Who are you talking about?")
         notes_q = player.get_notes()
         notes = {
             f'note-{i}': f'{n.type.name} on {n.datetime_created.date().isoformat()} - {n.content}'
@@ -58,16 +50,21 @@ class Informative(commands.Cog):
             await ctx.send('there are more than 5 notes on this player. Use `!listnote gov-id` to check all.')
 
     @commands.command('listnote', help="list all the notes of one player")
-    async def list_note(self, ctx, gov_id, type_name='', limit=20):
-        player = Player.get_or_none(gov_id=gov_id)
+    async def list_note(self, ctx, name_or_id, type_name='', limit=20):
+        player, names = search_player(name_or_id)
         if not player:
-            return await ctx.send(f'{gov_id=} is not recognized.')
+            if len(names) == 0:
+                return await ctx.send(f"I don't recognize that name: {name_or_id}.")
+            if len(names) == 1:
+                return await ctx.send(f"Did you mean {names[0]}?")
+            if len(names) > 1:
+                return await ctx.send(f"{', '.join(map(lambda x: f'`{x}`', names))}. Who are you talking about?")
 
         notes = {
             f'note-{i}': f'{n.type.name} on {n.datetime_created.date().isoformat()} - {n.content}'
-            for i, n in enumerate(player.get_notes(type_name, limit))
+            for i, n in enumerate(player.get_notes(type_name.upper(), limit))
         }
-        message = _format_message(ctx, **notes)
+        message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, **notes)
         await ctx.send(message)
 
     @commands.command("myinfo", help="check your info.")
@@ -87,38 +84,50 @@ class Submission(commands.Cog):
             return True
         return ctx.guild is None
 
-    @commands.command("mykill", help="submit the kill data | !mykill ID:your-id T4:t4-kill T5:t5-kill death:your-death")
+    @commands.command("mynewname", help="rename your in-game name.")
+    async def my_new_name(self, ctx, *, newname):
+        player = _get_player_by_ctx(ctx, default_to_none=False)
+        message = _format_message(ctx, gov_id=player.gov_id, oldname=player.current_name, newname=newname)
+        reply = await ctx.message.reply(message)
+        await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
+        await reply.add_reaction(settings.get("DECLINED_EMOJI"))
+        await ctx.send('Please react on message to complete or cancel your rename')
+
+    @commands.command("mykill", help="submit the kill data")
     @enabled_by('DM_COMMAND_MY_KILL_ENABLED')
     async def my_kill(self, ctx, t4, t5, death, gov_id=None):
-        gov_id = gov_id or _get_player_by_ctx(ctx, default_to_none=False).gov_id
+        player = get_player(gov_id) if gov_id else _get_player_by_ctx(ctx, default_to_none=False)
         has_attachment(ctx)
-        message = _format_message(ctx, gov_id=gov_id, t4=t4, t5=t5, death=death)
+        message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, t4=t4, t5=t5, death=death)
         reply = await ctx.message.reply(message)
         await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
         await reply.add_reaction(settings.get("DECLINED_EMOJI"))
+        await ctx.send('Please react on message to approve or cancel your request')
 
-    @commands.command("myhonor", help="submit the honor data | !myhonor id:your-id honor:your_honor")
+    @commands.command("myhonor", help="submit the honor data")
     @enabled_by('DM_COMMAND_MY_HONOR_ENABLED')
     async def my_honor(self, ctx, honor, gov_id=None):
-        gov_id = gov_id or _get_player_by_ctx(ctx, default_to_none=False).gov_id
+        player = get_player(gov_id) if gov_id else _get_player_by_ctx(ctx, default_to_none=False)
         has_attachment(ctx)
-        message = _format_message(ctx, gov_id=gov_id, honor=honor)
+        message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, honor=honor)
         reply = await ctx.message.reply(message)
         await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
         await reply.add_reaction(settings.get("DECLINED_EMOJI"))
+        await ctx.send('Please react on message to approve or cancel your request')
 
-    @commands.command("myscore", help="submit the pre-kvk score | !myscore stage:1/2/3 score:pre-kvk-score")
+    @commands.command("myscore", help="submit the pre-kvk score")
     @enabled_by('DM_COMMAND_MY_SCORE_ENABLED')
     async def my_score(self, ctx, *, stage, score, gov_id=None):
-        gov_id = gov_id or _get_player_by_ctx(ctx, default_to_none=False).gov_id
+        player = get_player(gov_id) if gov_id else _get_player_by_ctx(ctx, default_to_none=False)
         has_attachment(ctx)
-        message = _format_message(ctx, gov_id=gov_id, stage=stage, score=score)
+        message = _format_message(ctx, gov_id=player.gov_id, name=player.name, stage=stage, score=score)
         reply = await ctx.message.reply(message)
         await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
         await reply.add_reaction(settings.get("DECLINED_EMOJI"))
+        await ctx.send('Please react on message to approve or cancel your request')
 
     @commands.command("linkme", help="link your game account to discord.")
-    async def link_me(self, ctx, gov_id, name, alliance):
+    async def link_me(self, ctx, gov_id, name, alliance_name=None):
         player = _get_player_by_ctx(ctx)
         if player:
             return await ctx.send(f'You are already linked to gov_id: {player.gov_id}')
@@ -126,12 +135,21 @@ class Submission(commands.Cog):
         player = Player.get_or_none(gov_id=gov_id)
         if player and IdentityLinkage.filter(player=player).exists():
             return await ctx.send(f"The gov_id {gov_id} has been linked already")
-        if not Alliance.filter(name=alliance).exists():
-            alliances = [a.name for a in Alliance.select()]
-            return await ctx.send(f"{alliance} not found. Use one of them {alliances}")
+
+        if alliance_name is None:
+            for n in list_all_alliance_names():
+                if discord.utils.get(ctx.author.roles, name=n):
+                    alliance_name = n
+                    break
+            else:
+                return await ctx.send(f"alliance_name is a required argument that is missing.")
+
+        if not get_alliance(alliance_name):
+            alliance_names = list_all_alliance_names()
+            return await ctx.send(f"{alliance=} not found. Use one of them {alliance_names}")
 
         has_attachment(ctx)
-        message = _format_message(ctx, gov_id=gov_id, name=name, alliance=alliance)
+        message = _format_message(ctx, gov_id=gov_id, name=name, alliance=alliance_name)
         reply = await ctx.message.reply(message)
         await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
         await reply.add_reaction(settings.get("DECLINED_EMOJI"))
@@ -145,18 +163,29 @@ class OfficerOnly(commands.Cog):
             guild_setting = GuildSettings.get(id=ctx.guild.id)
             return discord.utils.get(ctx.author.roles, id=guild_setting.officer_role_id)
 
-    @commands.command("introduce", help="add new member info")
-    async def introduce(self, ctx, gov_id: int, *, name: str):
-        if Player.filter(gov_id=gov_id).exists():
+    @commands.command("add", help="add new player")
+    async def add(self, ctx, gov_id: int, *, name: str):
+        player = get_player(gov_id)
+        if player:
             return await ctx.send(f"Error: {gov_id=} already exists.")
         create_new_player(gov_id, name)
+        await ctx.message.add_reaction(settings.get('SUCCEED_EMOJI'))
 
-    @commands.command("rename", help="rename member info")
+    @commands.command('note', help='add note to player')
+    async def note(self, ctx, gov_id, note_type, *, note):
+        player = get_player(gov_id)
+        if not player:
+            return await ctx.send(f"Error: {gov_id=} does not exist.")
+        add_player_note(gov_id, note_type, note)
+        await ctx.message.add_reaction(settings.get('SUCCEED_EMOJI'))
+
+    @commands.command("rename", help="rename in-game name.")
     async def rename(self, ctx, gov_id, *, name):
         player = Player.get_or_none(gov_id=gov_id)
         if not player:
             return await ctx.send(f'{gov_id=} does not exist. `!introduce f{gov_id} f{name}')
         update_name(player, name)
+        await ctx.message.add_reaction(settings.get('SUCCEED_EMOJI'))
 
 
 class Admin(commands.Cog):
@@ -204,4 +233,4 @@ def _get_player_by_ctx(ctx, default_to_none=True):
         return q.order_by(IdentityLinkage.id.desc()).first().player
     if not default_to_none:
         raise commands.errors.BadArgument(
-            "Your game id is not linked to with your discord, hence you must provide your id.")
+            "Your game id is not linked to with your discord, Hint: use `!linkme`")
