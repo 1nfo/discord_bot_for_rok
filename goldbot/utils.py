@@ -2,14 +2,8 @@ from functools import wraps
 
 import discord
 from discord.ext.commands import errors
-from fuzzywuzzy import process
 
 import settings
-
-
-def fuzzy_match(name, chooses):
-    result = process.extractOne(name, chooses, score_cutoff=60)
-    return result and result[0]
 
 
 def has_role(guild, role_id, user_id):

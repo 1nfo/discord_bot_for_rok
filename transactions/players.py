@@ -1,6 +1,6 @@
-from goldbot.utils import fuzzy_match
+from fuzzywuzzy import process
+
 from models import Player, Alliance, UsedName, Identity, IdentityLinkage, db
-from transactions.notes import add_player_note
 
 
 def get_player(gov_id):
@@ -23,14 +23,17 @@ def search_player(name):
     if 1 < len(matched) <= 5:
         return None, [x.name for x in matched]
 
-    closest_name = fuzzy_match(name, [x.name for x in UsedName.select()])
+    closest_name = _fuzzy_match(name, [x.name for x in UsedName.select()])
     return None, [closest_name] if closest_name else []
 
 
 @db.atomic()
 def update_name(gov_id, name):
+    from transactions.notes import add_player_note
+
     player = get_player(gov_id)
     if player.current_name != name:
+        old_name = player.current_name
         player.current_name = name
         player.save()
         UsedName.get_or_create(name=name, defaults=dict(player=player))
@@ -47,6 +50,8 @@ def create_new_player(gov_id, name):
 
 @db.atomic()
 def update_player(gov_id, name, alliance=None, discord_id=None):
+    from transactions.notes import add_player_note
+
     # create player
     player = Player.get_or_none(gov_id=gov_id)
     if not player:
@@ -64,7 +69,7 @@ def update_player(gov_id, name, alliance=None, discord_id=None):
 
     if discord_id:
         identity, _ = Identity.get_or_create(external_id=discord_id)
-        linkage = IdentityLinkage.filter(player=player).order_by(IdentityLinkage.id.desc()).first()
+        linkage = IdentityLinkage.filter(player=player).order_by(IdentityLinkage.datetime_created.desc()).first()
         if not linkage:
             _, created = IdentityLinkage.get_or_create(player=player, identity=identity)
             if created:
@@ -73,3 +78,8 @@ def update_player(gov_id, name, alliance=None, discord_id=None):
             raise ValueError(f'{gov_id=} already linked to {linkage.identity.external_id=} ')
 
     return player
+
+
+def _fuzzy_match(name, chooses):
+    result = process.extractOne(name, chooses, score_cutoff=60)
+    return result and result[0]

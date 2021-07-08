@@ -18,7 +18,7 @@ class RecordingEvent(Base):
 
     @classmethod
     def current_event(cls):
-        e = cls.filter(status=cls.Status.Open).order_by(cls.id.desc()).first()
+        e = cls.filter(status=cls.Status.Open).order_by(cls.datetime_created.desc()).first()
         if e:
             return e
         else:

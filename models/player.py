@@ -14,7 +14,7 @@ class Player(Base):
     def get_notes(self, type_name='', limit=20):
         from models.player_note import PlayerNote, NoteType
         note_types = NoteType.startswith(type_name)
-        return self.notes.where(PlayerNote.type.in_(note_types)).order_by(PlayerNote.id.desc()).limit(limit)
+        return self.notes.where(PlayerNote.type.in_(note_types)).order_by(PlayerNote.datetime_created.desc()).limit(limit)
 
     @cached_property
     def alliance_name(self):
@@ -22,5 +22,5 @@ class Player(Base):
 
     def get_recent_records(self):
         from models import RecordingEvent
-        event = RecordingEvent.select().order_by(RecordingEvent.id.desc()).first()
+        event = RecordingEvent.select().order_by(RecordingEvent.datetime_created.desc()).first()
         return self.records.filter(event=event)

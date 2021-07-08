@@ -201,8 +201,8 @@ class Admin(commands.Cog):
         await ctx.send('starting ETL')
         for j in JOBS:
             await ctx.send(f'running {j.__name__}')
-            result = j()
-            await ctx.send(f'{result}')
+            j()
+            await ctx.send('succeed')
         await ctx.send('finished ETL')
 
     @commands.command("test", help="test")
@@ -235,7 +235,7 @@ def _get_player_by_ctx(ctx, default_to_none=True):
     identity = Identity.get_or_none(external_id=ctx.message.author.id)
     q = IdentityLinkage.filter(identity=identity)
     if identity and q.exists():
-        return q.order_by(IdentityLinkage.id.desc()).first().player
+        return q.order_by(IdentityLinkage.datetime_created.desc()).first().player
     if not default_to_none:
         raise commands.errors.BadArgument(
             "Your game id is not linked to with your discord, Hint: use `!linkme`")
