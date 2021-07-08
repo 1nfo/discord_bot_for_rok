@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 async def execute(message, payload):
-    lines = message.content.split('\n')[2:-2]
+    lines = message.content.split('```')[1].strip().split()
     args = convert_to_dict(lines)
     command = args.pop('command', None)
     if command == 'linkme':

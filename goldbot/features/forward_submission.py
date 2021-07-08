@@ -10,7 +10,7 @@ async def execute(message, reaction_name, guilds):
         return await message.add_reaction(settings.get("FAILURE_EMOJI"))
 
     if reaction_name == settings.get("APPROVAL_EMOJI"):
-        lines = message.content.split('\n')[2:-2]
+        lines = message.content.split('```')[1].strip().split()
         args = convert_to_dict(lines)
         command = args.pop('command', None)
 

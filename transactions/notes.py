@@ -25,4 +25,4 @@ def add_player_note(player, type_name, content, datetime_created=None):
     if datetime_created:
         args['datetime_created'] = datetime_created
 
-    return PlayerNote.create(**args)
+    return PlayerNote.get_or_create(**args)

@@ -11,10 +11,10 @@ class Player(Base):
     nick_name = CharField(null=True)
     alliance = ForeignKeyField(Alliance, null=True)
 
-    def get_notes(self, type_name=''):
+    def get_notes(self, type_name='', limit=20):
         from models.player_note import PlayerNote, NoteType
         note_types = NoteType.startswith(type_name)
-        return self.notes.where(PlayerNote.type.in_(note_types)).order_by(PlayerNote.id.desc())
+        return self.notes.where(PlayerNote.type.in_(note_types)).order_by(PlayerNote.id.desc()).limit(limit)
 
     @cached_property
     def alliance_name(self):
