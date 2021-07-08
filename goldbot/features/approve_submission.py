@@ -15,6 +15,7 @@ async def execute(message, payload):
     if command == 'linkme':
         update_player(discord_id=message.mentions[0].id, **args)
     elif command in ('mykill', 'myscore', 'myhonor'):
+        args.pop('name', None)
         if command == 'myscore':
             args['stage' + args.pop('stage')] = args.pop('score')
         create_records(**args)

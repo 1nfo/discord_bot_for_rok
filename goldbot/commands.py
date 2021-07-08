@@ -73,8 +73,11 @@ class Informative(commands.Cog):
         if not player:
             await ctx.send(
                 f'{ctx.message.author.mention} your has no rok account linked to discord. Hint: use `!linkme`')
-
-        message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, alliance=player.alliance.name)
+        message = _format_message(
+            ctx, gov_id=player.gov_id, name=player.current_name, alliance=player.alliance.name)
+        records = {r.type: r.value for r in player.get_recent_records()}
+        if records:
+            message += f"Your previous submission:" + _format_message(ctx, tag_author=False, **records)
         return await ctx.send(message)
 
 
@@ -117,10 +120,10 @@ class Submission(commands.Cog):
 
     @commands.command("myscore", help="submit the pre-kvk score")
     @enabled_by('DM_COMMAND_MY_SCORE_ENABLED')
-    async def my_score(self, ctx, *, stage, score, gov_id=None):
+    async def my_score(self, ctx, stage, score, gov_id=None):
         player = get_player(gov_id) if gov_id else _get_player_by_ctx(ctx, default_to_none=False)
         has_attachment(ctx)
-        message = _format_message(ctx, gov_id=player.gov_id, name=player.name, stage=stage, score=score)
+        message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, stage=stage, score=score)
         reply = await ctx.message.reply(message)
         await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
         await reply.add_reaction(settings.get("DECLINED_EMOJI"))
@@ -210,8 +213,10 @@ class Admin(commands.Cog):
             await ctx.send(str(e))
 
 
-def _format_message(ctx, append_attachment=True, **kwargs):
-    lines_to_send = [ctx.message.author.mention]
+def _format_message(ctx, tag_author=False, append_attachment=True, **kwargs):
+    lines_to_send = []
+    if tag_author:
+        lines_to_send += [ctx.message.author.mention]
 
     arguments = [('command', ctx.command.name)]
     arguments += kwargs.items()

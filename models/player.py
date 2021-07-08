@@ -19,3 +19,8 @@ class Player(Base):
     @cached_property
     def alliance_name(self):
         return self.alliance.name if self.alliance else None
+
+    def get_recent_records(self):
+        from models import RecordingEvent
+        event = RecordingEvent.select().order_by(RecordingEvent.id.desc()).first()
+        return self.records.filter(event=event)

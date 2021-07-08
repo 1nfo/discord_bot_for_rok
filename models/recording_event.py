@@ -22,4 +22,4 @@ class RecordingEvent(Base):
         if e:
             return e
         else:
-            cls.create(status=cls.Status.Open, name=f'auto-event {datetime.datetime.now()}')
+            return cls.create(status=cls.Status.Open, name=f'auto-event {datetime.datetime.now()}')
