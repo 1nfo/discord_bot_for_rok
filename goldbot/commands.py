@@ -135,7 +135,7 @@ class PMCommand(commands.Cog):
     async def my_info(self, ctx):
         player = _get_player_by_ctx(ctx)
         message = _format_message(
-            ctx, gov_id=player.gov_id, name=player.current_name, alliance=player.alliance.name)
+            ctx, gov_id=player.gov_id, name=player.current_name, alliance=player.alliance.name, tag_author=False)
         records = {r.type: r.value for r in player.get_recent_records()}
         if records:
             message += f"Your previous submission:" + _format_message(ctx, tag_author=False, **records)
@@ -166,7 +166,11 @@ class OfficerOnly(commands.Cog):
             return True
         if ctx.channel == discord.ChannelType.text:
             guild_setting = GuildSettings.get(id=ctx.guild.id)
-            return discord.utils.get(ctx.author.roles, id=guild_setting.officer_role_id)
+            if discord.utils.get(ctx.author.roles, id=guild_setting.officer_role_id):
+                return True
+            else:
+                ctx.send("You don't have officer role to use this command.")
+                return False
 
     @commands.command("link", help="link player to discord account.")
     async def link(self, ctx, mention, gov_id: int, *, name: str = ''):
