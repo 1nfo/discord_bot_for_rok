@@ -3,8 +3,22 @@ from fuzzywuzzy import process
 from models import Player, Alliance, UsedName, Identity, IdentityLinkage, db
 
 
-def get_player(gov_id):
+def get_player_by_id(gov_id):
     return Player.get_or_none(gov_id=gov_id)
+
+
+def get_identity_by_gov_id(gov_id):
+    linkage = IdentityLinkage.select().join(Player).where(
+        Player.gov_id == gov_id and Identity.type == Identity.Type.Discord
+    ).order_by(IdentityLinkage.datetime_created.desc()).first()
+    return linkage.identity if linkage else None
+
+
+def get_player_by_discord_id(discord_id):
+    linkage = IdentityLinkage.select().join(Identity).where(
+        Identity.id == discord_id and Identity.type == Identity.Type.Discord
+    ).order_by(IdentityLinkage.datetime_created.desc()).first()
+    return linkage.player if linkage else None
 
 
 def search_player(name):
@@ -31,7 +45,7 @@ def search_player(name):
 def update_name(gov_id, name):
     from transactions.notes import add_player_note
 
-    player = get_player(gov_id)
+    player = get_player_by_id(gov_id)
     if player.current_name != name:
         old_name = player.current_name
         player.current_name = name

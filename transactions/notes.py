@@ -11,8 +11,8 @@ def create_new_note_type(type_name):
 
 @db.atomic()
 def add_player_note(gov_id, type_name, content, datetime_created=None):
-    from .players import get_player
-    player = get_player(gov_id)
+    from .players import get_player_by_id
+    player = get_player_by_id(gov_id)
     q = NoteType.startswith(type_name)
     c = q.count()
     if c != 1:

@@ -6,11 +6,15 @@ import discord
 from discord.ext import commands
 
 import settings
-from models import Player, IdentityLinkage, Identity
 from settings.discord_guild_settings import GuildSettings
 from transactions.alliances import list_all_alliance_names
 from transactions.notes import add_player_note
-from transactions.players import update_name, search_player, get_player
+from transactions.players import (
+    update_name, search_player,
+    get_player_by_id,
+    get_player_by_discord_id,
+    get_identity_by_gov_id
+)
 from .utils import has_attachment, enabled_by
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
@@ -77,11 +81,10 @@ class PMCommand(commands.Cog):
 
     @commands.command("linkme", help="link your game account to discord.")
     async def link_me(self, ctx, gov_id, name):
-        if _get_player_by_ctx(ctx.message.author.id):
+        if get_player_by_discord_id(ctx.message.author.id):
             return await ctx.send(f'You are already linked to gov_id: {player.gov_id}')
 
-        player = Player.get_or_none(gov_id=gov_id)
-        if player and IdentityLinkage.filter(player=player).exists():
+        if get_identity_by_gov_id(gov_id):
             return await ctx.send(f"The gov_id {gov_id} has been linked already")
 
         for n in list_all_alliance_names():
@@ -101,7 +104,7 @@ class PMCommand(commands.Cog):
     @commands.command("mykill", help="submit the kill data")
     @enabled_by('DM_COMMAND_MY_KILL_ENABLED')
     async def my_kill(self, ctx, t4, t5, death, gov_id=None):
-        player = get_player(gov_id) if gov_id else _get_player_by_ctx(ctx.message.author.id, default_to_none=False)
+        player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
         has_attachment(ctx)
         message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, t4=t4, t5=t5, death=death)
         reply = await ctx.message.reply(message)
@@ -112,7 +115,7 @@ class PMCommand(commands.Cog):
     @commands.command("myhonor", help="submit the honor data")
     @enabled_by('DM_COMMAND_MY_HONOR_ENABLED')
     async def my_honor(self, ctx, honor, gov_id=None):
-        player = get_player(gov_id) if gov_id else _get_player_by_ctx(ctx.message.author.id, default_to_none=False)
+        player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
         has_attachment(ctx)
         message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, honor=honor)
         reply = await ctx.message.reply(message)
@@ -123,7 +126,7 @@ class PMCommand(commands.Cog):
     @commands.command("myscore", help="submit the pre-kvk score")
     @enabled_by('DM_COMMAND_MY_SCORE_ENABLED')
     async def my_score(self, ctx, stage, score, gov_id=None):
-        player = get_player(gov_id) if gov_id else _get_player_by_ctx(ctx.message.author.id, default_to_none=False)
+        player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
         has_attachment(ctx)
         message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, stage=stage, score=score)
         reply = await ctx.message.reply(message)
@@ -133,10 +136,7 @@ class PMCommand(commands.Cog):
 
     @commands.command("myinfo", help="check your info.")
     async def my_info(self, ctx):
-        player = _get_player_by_ctx(ctx.message.author.id)
-        if not player:
-            await ctx.send(
-                f'{ctx.message.author.mention} your has no rok account linked to discord. Hint: use `!linkme`')
+        player = _get_player_by_ctx(ctx)
         message = _format_message(
             ctx, gov_id=player.gov_id, name=player.current_name, alliance=player.alliance.name)
         records = {r.type: r.value for r in player.get_recent_records()}
@@ -146,7 +146,7 @@ class PMCommand(commands.Cog):
 
     @commands.command("mynewname", help="rename your in-game name.")
     async def my_new_name(self, ctx, *, newname):
-        player = _get_player_by_ctx(ctx.message.author.id, default_to_none=False)
+        player = _get_player_by_ctx(ctx)
         message = _format_message(ctx, gov_id=player.gov_id, oldname=player.current_name, newname=newname)
         reply = await ctx.message.reply(message)
         await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
@@ -167,7 +167,7 @@ class OfficerOnly(commands.Cog):
         if not re.match("<@\d+>", mention):
             return await ctx.send(f"please @ the user to link to: `!link @username {gov_id} {name}`")
 
-        if not get_player(gov_id) and not name:
+        if not get_player_by_id(gov_id) and not name:
             return await ctx.send(f"Please provide in-game name as well: `!link @usename {gov_id} <player_name>`")
 
         for n in list_all_alliance_names():
@@ -181,13 +181,12 @@ class OfficerOnly(commands.Cog):
         reply = await ctx.message.reply(message)
         await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
         await reply.add_reaction(settings.get("DECLINED_EMOJI"))
-        player = Player.get_or_none(gov_id=gov_id)
-        if player and IdentityLinkage.filter(player=player).exists():
+        if get_identity_by_gov_id(gov_id):
             await ctx.send(f"The gov_id {gov_id} has been linked already")
 
     @commands.command("rename", help="update player in-game name.")
     async def rename(self, ctx, gov_id, *, name):
-        player = Player.get_or_none(gov_id=gov_id)
+        player = get_player_by_id(gov_id)
         if not player:
             return await ctx.send(f'{gov_id=} does not exist')
         update_name(player, name)
@@ -195,7 +194,7 @@ class OfficerOnly(commands.Cog):
 
     @commands.command('note', help='add note to player')
     async def note(self, ctx, gov_id, note_type, *, note):
-        player = get_player(gov_id)
+        player = get_player_by_id(gov_id)
         if not player:
             return await ctx.send(f"Error: {gov_id=} does not exist.")
         add_player_note(gov_id, note_type, note)
@@ -239,11 +238,10 @@ def _format_message(ctx, tag_author=False, append_attachment=True, **kwargs):
     return '\n'.join(lines_to_send)
 
 
-def _get_player_by_ctx(discord_id, default_to_none=True):
-    identity = Identity.get_or_none(external_id=discord_id)
-    q = IdentityLinkage.filter(identity=identity)
-    if identity and q.exists():
-        return q.order_by(IdentityLinkage.datetime_created.desc()).first().player
-    if not default_to_none:
-        raise commands.errors.BadArgument(
-            "Your game id is not linked to with your discord, Hint: use `!linkme`")
+def _get_player_by_ctx(ctx):
+    player = get_player_by_discord_id(ctx.message.author.id)
+    if player:
+        return player
+
+    raise commands.errors.BadArgument(
+        "Your game id is not linked to with your discord, Hint: use `!linkme`")
