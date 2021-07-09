@@ -221,7 +221,7 @@ class Admin(commands.Cog):
             await ctx.send(str(e))
 
 
-def _format_message(ctx, tag_author=False, append_attachment=True, **kwargs):
+def _format_message(ctx, tag_author=True, append_attachment=True, **kwargs):
     lines_to_send = []
     if tag_author:
         lines_to_send += [ctx.message.author.mention]
