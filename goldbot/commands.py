@@ -195,16 +195,6 @@ class Admin(commands.Cog):
     async def cog_check(self, ctx):
         return await ctx.bot.is_owner(ctx.author)
 
-    @commands.command("etl", help="run ETL from google sheet")
-    async def etl(self, ctx):
-        from etl.sheet_to_db import JOBS
-        await ctx.send('starting ETL')
-        for j in JOBS:
-            await ctx.send(f'running {j.__name__}')
-            j()
-            await ctx.send('succeed')
-        await ctx.send('finished ETL')
-
     @commands.command("test", help="test")
     async def test(self, ctx, *, arg):
         try:

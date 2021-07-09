@@ -36,7 +36,7 @@ def update_name(gov_id, name):
         old_name = player.current_name
         player.current_name = name
         player.save()
-        UsedName.get_or_create(name=name, defaults=dict(player=player))
+        UsedName.create(name=name, player=player)
         add_player_note(gov_id, 'INFO', f'renamed {old_name}  => {name}')
         return True
 
