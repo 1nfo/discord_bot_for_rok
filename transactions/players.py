@@ -4,7 +4,7 @@ from models import Player, Alliance, UsedName, Identity, IdentityLinkage, db
 
 
 def get_player(gov_id):
-    return Player.get(gov_id=gov_id)
+    return Player.get_or_none(gov_id=gov_id)
 
 
 def search_player(name):
@@ -49,7 +49,7 @@ def create_new_player(gov_id, name):
 
 
 @db.atomic()
-def update_player(gov_id, name, alliance=None, discord_id=None):
+def upsert_player(gov_id, name, alliance=None, discord_id=None):
     from transactions.notes import add_player_note
 
     # create player
@@ -69,13 +69,11 @@ def update_player(gov_id, name, alliance=None, discord_id=None):
 
     if discord_id:
         identity, _ = Identity.get_or_create(external_id=discord_id)
-        linkage = IdentityLinkage.filter(player=player).order_by(IdentityLinkage.datetime_created.desc()).first()
-        if not linkage:
-            _, created = IdentityLinkage.get_or_create(player=player, identity=identity)
-            if created:
-                add_player_note(gov_id, 'INFO', 'linked to discord')
-        elif linkage.identity != identity:
-            raise ValueError(f'{gov_id=} already linked to {linkage.identity.external_id=} ')
+        linkage, created = IdentityLinkage.get_or_create(player=player, defaults=dict(identity=identity))
+        if created or linkage.identity != identity:
+            linkage.identity = identity
+            linkage.save()
+            add_player_note(gov_id, 'INFO', 'linked to discord')
 
     return player
 

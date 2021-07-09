@@ -2,7 +2,7 @@ import logging
 
 import settings
 from goldbot.utils import convert_to_dict
-from transactions.players import update_player
+from transactions.players import upsert_player
 from transactions.records import create_records
 
 logger = logging.getLogger(__name__)
@@ -12,8 +12,8 @@ async def execute(message, payload):
     lines = message.content.split('```')[1].strip().split('\n')
     args = convert_to_dict(lines)
     command = args.pop('command', None)
-    if command == 'linkme':
-        update_player(discord_id=message.mentions[0].id, **args)
+    if command in ('linkme', 'link'):
+        upsert_player(**args)
     elif command in ('mykill', 'myscore', 'myhonor'):
         args.pop('name', None)
         if command == 'myscore':

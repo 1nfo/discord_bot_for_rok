@@ -4,7 +4,7 @@ import settings
 from models import Player, Record, RecordingEvent
 from settings.constants import Sheet
 from transactions.notes import add_player_note
-from transactions.players import update_player
+from transactions.players import upsert_player
 from transactions.records import create_record
 from .sheet import get_sheet_data
 
@@ -34,7 +34,7 @@ def pull_930x_kvk3_member_sheet():
     data = get_sheet_data(sheet)
 
     for i in data.index:
-        player = update_player(data[sheet.col_id][i], data[sheet.col_name][i])
+        player = upsert_player(data[sheet.col_id][i], data[sheet.col_name][i])
         add_player_note(player.gov_id, 'INFO', 'Was in KvK3', KVK3_BACK_FILL_DATE)
 
 
