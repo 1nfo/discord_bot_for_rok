@@ -16,6 +16,7 @@ from transactions.players import (
     get_identity_by_gov_id
 )
 from .utils import has_attachment, enabled_by
+from .utils import has_role
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
@@ -87,12 +88,7 @@ class PMCommand(commands.Cog):
         if get_identity_by_gov_id(gov_id):
             return await ctx.send(f"The gov_id {gov_id} has been linked already")
 
-        for n in list_all_alliance_names():
-            if discord.utils.get(ctx.author.roles, name=n):
-                alliance_name = n
-                break
-        else:
-            alliance_name = 'unknown'
+        alliance_name = _get_alliance_name(ctx)
 
         has_attachment(ctx)
         discord_id = ctx.message.author.id
@@ -103,7 +99,7 @@ class PMCommand(commands.Cog):
 
     @commands.command("mykill", help="submit the kill data")
     @enabled_by('DM_COMMAND_MY_KILL_ENABLED')
-    async def my_kill(self, ctx, t4, t5, death, gov_id=None):
+    async def my_kill(self, ctx, t4: int, t5: int, death: int, gov_id: int = None):
         player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
         has_attachment(ctx)
         message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, t4=t4, t5=t5, death=death)
@@ -114,7 +110,7 @@ class PMCommand(commands.Cog):
 
     @commands.command("myhonor", help="submit the honor data")
     @enabled_by('DM_COMMAND_MY_HONOR_ENABLED')
-    async def my_honor(self, ctx, honor, gov_id=None):
+    async def my_honor(self, ctx, honor: int, gov_id: int = None):
         player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
         has_attachment(ctx)
         message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, honor=honor)
@@ -125,7 +121,8 @@ class PMCommand(commands.Cog):
 
     @commands.command("myscore", help="submit the pre-kvk score")
     @enabled_by('DM_COMMAND_MY_SCORE_ENABLED')
-    async def my_score(self, ctx, stage, score, gov_id=None):
+    async def my_score(self, ctx, stage: int, score: int, gov_id: int = None):
+        assert stage in (1, 2, 3), f'stage expected to be 1,2,3'
         player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
         has_attachment(ctx)
         message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, stage=stage, score=score)
@@ -154,6 +151,15 @@ class PMCommand(commands.Cog):
         await ctx.send('Please react on message to complete or cancel your rename')
 
 
+def _get_alliance_name(ctx):
+    guild = discord.utils.get(ctx.bot.guilds, id=GuildSettings.get(name='kingdom').id)
+    for n in list_all_alliance_names():
+        if has_role(guild, n, ctx.author.id):
+            return n
+    else:
+        return 'unknown'
+
+
 class OfficerOnly(commands.Cog):
     async def cog_check(self, ctx):
         if await ctx.bot.is_owner(ctx.author):
@@ -170,12 +176,7 @@ class OfficerOnly(commands.Cog):
         if not get_player_by_id(gov_id) and not name:
             return await ctx.send(f"Please provide in-game name as well: `!link @usename {gov_id} <player_name>`")
 
-        for n in list_all_alliance_names():
-            if discord.utils.get(ctx.author.roles, name=n):
-                alliance_name = n
-                break
-        else:
-            alliance_name = 'unknown'
+        alliance_name = _get_alliance_name(ctx)
 
         message = _format_message(ctx, gov_id=gov_id, name=name, alliance=alliance_name, discord_id=mention[2:-1])
         reply = await ctx.message.reply(message)

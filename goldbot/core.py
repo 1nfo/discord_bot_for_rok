@@ -40,8 +40,8 @@ class GoldBot(commands.Bot):
         elif isinstance(error, commands.CheckFailure):
             logger.debug(f'{ctx=}, {error=}')
         else:
-            logger.exception(f'{ctx=}, {error=}')
-            await ctx.send(f'{error=}')
+            logger.exception(f'{error}', exc_info=error)
+            await ctx.send(f'{error}')
 
 
 intents = Intents.default()

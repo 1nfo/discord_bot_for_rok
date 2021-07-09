@@ -41,7 +41,7 @@ async def on_raw_reaction_add(payload):
         if not guild_settings:
             return
 
-        guild = discord.utils.get(bot.guilds, id=payload.guild_id)
+        guild = discord.utils.get(bot.guilds, id=GuildSettings.get(name='kingdom').id)
         if not has_role(guild, guild_settings.approver_role_id, payload.member.id):
             return
 

@@ -9,7 +9,7 @@ def get_player_by_id(gov_id):
 
 def get_identity_by_gov_id(gov_id):
     linkage = IdentityLinkage.select().join(Player).where(
-        Player.gov_id == gov_id and Identity.type == Identity.Type.Discord
+        Player.gov_id == gov_id
     ).order_by(IdentityLinkage.datetime_created.desc()).first()
     return linkage.identity if linkage else None
 

@@ -14,6 +14,7 @@ async def execute(message, payload):
     command = args.pop('command', None)
     if command in ('linkme', 'link'):
         upsert_player(**args)
+
     elif command in ('mykill', 'myscore', 'myhonor'):
         args.pop('name', None)
         if command == 'myscore':

@@ -6,7 +6,7 @@ from discord.ext.commands import errors
 import settings
 
 
-def has_role(guild, role_id, user_id):
+def has_role(guild, role, user_id):
     if not guild:
         return False
 
@@ -14,7 +14,10 @@ def has_role(guild, role_id, user_id):
     if not member:
         return False
 
-    return bool(discord.utils.get(member.roles, id=role_id))
+    if isinstance(role, int):
+        return bool(discord.utils.get(member.roles, id=role))
+    else:
+        return bool(discord.utils.get(member.roles, name=role))
 
 
 def has_attachment(ctx):
