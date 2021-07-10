@@ -7,7 +7,6 @@ from discord.ext import commands
 
 import settings
 from settings.discord_guild_settings import GuildSettings
-from transactions.alliances import list_all_alliance_names
 from transactions.notes import add_player_note
 from transactions.players import (
     search_player,
@@ -15,7 +14,7 @@ from transactions.players import (
     get_player_by_discord_id,
     get_identity_by_gov_id
 )
-from .utils import has_attachment, enabled_by, has_role, number
+from .utils import has_attachment, enabled_by, number, get_alliance_name
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
@@ -40,13 +39,18 @@ class Query(commands.Cog):
                 return await ctx.send(f"Did you mean {names[0]}?")
             if len(names) > 1:
                 return await ctx.send(f"{', '.join(map(lambda x: f'`{x}`', names))} Who are you talking about?")
+
+        if identity := get_identity_by_gov_id(player.gov_id):
+            member = _get_discord_member(ctx, int(identity.external_id))
+            identity = member and member.name
         notes_q = player.get_notes()
         notes = {
-            f'note-{i}': f'{n.type.name} on {n.datetime_created.date().isoformat()} - {n.content}'
+            f'note-{i:02}': f'{n.type.name} on {n.datetime_created.date().isoformat()} - {n.content}'
             for i, n in enumerate(notes_q.limit(5))
         }
         message = _format_message(
             ctx, gov_id=player.gov_id, name=player.current_name, alliance=player.alliance_name,
+            linked_to=identity,
             **notes,
         )
 
@@ -97,8 +101,8 @@ class PMCommand(commands.Cog):
             return await ctx.send(f"Please provide in-game name as well: `!link @usename {gov_id} <player_name>`")
 
         has_attachment(ctx)
-
-        alliance_name = _get_alliance_name(ctx, discord_id)
+        guild = discord.utils.get(ctx.bot.guilds, id=GuildSettings.get(name='kingdom').id)
+        alliance_name = get_alliance_name(guild, discord_id)
         message = _format_message(ctx, gov_id=gov_id, name=name, alliance=alliance_name, discord_id=discord_id)
 
         await _reply_for_approval(ctx, message)
@@ -189,7 +193,8 @@ class OfficerOnly(commands.Cog):
         if not name:
             return await ctx.send(f"Please provide in-game name as well: `!link @usename {gov_id} <player_name>`")
 
-        alliance_name = _get_alliance_name(ctx, discord_id)
+        guild = discord.utils.get(ctx.bot.guilds, id=GuildSettings.get(name='kingdom').id)
+        alliance_name = get_alliance_name(guild, discord_id)
         # not tag for add command for non-forwarding message
         message = _format_message(
             ctx, gov_id=gov_id, name=name, alliance=alliance_name, discord_id=discord_id, tag_author=False)
@@ -234,6 +239,8 @@ class Admin(commands.Cog):
 
     @commands.command("exec", help="exec")
     async def exec(self, ctx, *, arg):
+        # noinspection PyUnresolvedReferences
+        from etl import JOBS
         try:
             exec(arg)
         except Exception as e:
@@ -258,15 +265,6 @@ def _format_message(ctx, tag_author=True, append_attachment=True, **kwargs):
     return '\n'.join(lines_to_send)
 
 
-def _get_alliance_name(ctx, discord_id):
-    guild = discord.utils.get(ctx.bot.guilds, id=GuildSettings.get(name='kingdom').id)
-    for n in list_all_alliance_names():
-        if has_role(guild, n, discord_id):
-            return n
-    else:
-        return 'unknown'
-
-
 def _get_player_by_ctx(ctx):
     player = get_player_by_discord_id(ctx.message.author.id)
     if player:
@@ -281,3 +279,8 @@ async def _reply_for_approval(ctx, reply_message):
     await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
     await reply.add_reaction(settings.get("DECLINED_EMOJI"))
     await ctx.send('Please react on message to approve or cancel your request')
+
+
+def _get_discord_member(ctx, discord_id):
+    guild = discord.utils.get(ctx.bot.guilds, id=GuildSettings.get(name='kingdom').id)
+    return guild.get_member(discord_id)

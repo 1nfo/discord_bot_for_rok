@@ -1,20 +1,13 @@
 import datetime
 
 import settings
+from etl import etl_job
 from models import Player, Record, RecordingEvent
 from settings.constants import Sheet
 from transactions.notes import add_player_note
 from transactions.players import upsert_player
 from transactions.records import create_record
 from .sheet import get_sheet_data
-
-JOBS = []
-
-
-def etl_job(f):
-    JOBS.append(f)
-    return f
-
 
 KVK3_BACK_FILL_EVENT_NAME = "kvk 3 back fill"
 KVK3_BACK_FILL_DATE = datetime.datetime(2021, 5, 12)

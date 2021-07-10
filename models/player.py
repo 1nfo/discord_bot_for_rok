@@ -25,3 +25,6 @@ class Player(Base):
         from models import RecordingEvent
         event = RecordingEvent.select().order_by(RecordingEvent.datetime_created.desc()).first()
         return self.records.filter(event=event)
+
+    def __str__(self):
+        return self.current_name

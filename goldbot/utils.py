@@ -49,3 +49,12 @@ def convert_to_dict(lines):
         k, v = line.split(':', maxsplit=2)
         args[k.strip()] = v.strip()
     return args
+
+
+def get_alliance_name(guild, discord_id):
+    from transactions.alliances import list_all_alliance_names
+    for n in list_all_alliance_names():
+        if has_role(guild, n, discord_id):
+            return n
+    else:
+        return 'unknown'
