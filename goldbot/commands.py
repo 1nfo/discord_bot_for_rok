@@ -168,14 +168,7 @@ class OfficerOnly(commands.Cog):
     async def cog_check(self, ctx):
         if ctx.message.channel.type == discord.ChannelType.text:
             guild_setting = GuildSettings.get(id=ctx.guild.id)
-            if discord.utils.get(ctx.author.roles, id=guild_setting.officer_role_id):
-                return True
-            else:
-                await ctx.send("You don't have officer role to use this command.")
-                return False
-        if ctx.message.channel.type == discord.ChannelType.private:
-            await ctx.send("Command can not be used in private channel")
-            return False
+            return discord.utils.get(ctx.author.roles, id=guild_setting.officer_role_id)
 
     @commands.command('add', help="add a new player with id and name")
     async def add(self, ctx, gov_id: int, *, name: str):
