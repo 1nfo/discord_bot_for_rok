@@ -19,15 +19,13 @@ def create_records(gov_id, event=None, datetime_created=None, **records):
     event = event or RecordingEvent.current_event()
 
     for record_type, value in records.items():
-        defaults = {
-            'value': value,
-        }
-        if datetime_created:
-            defaults['datetime_created'] = datetime_created
-
-        Record.get_or_create(
+        record = Record.get_or_none(
             player=player,
             event=event,
             type=Record.Type(record_type),
-            defaults=defaults
         )
+
+        record.value = value
+        if datetime_created:
+            record.datetime_created = datetime_created
+        record.save()
