@@ -112,7 +112,10 @@ class PMCommand(commands.Cog):
 
         has_attachment(ctx)
 
-        message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, t4=t4, t5=t5, death=death)
+        message = _format_message(
+            ctx, gov_id=player.gov_id, name=player.current_name,
+            t4=f'{t4:,}', t5=f'{t5:,}', death=f'{death:,}'
+        )
 
         await _reply_for_approval(ctx, message)
 
@@ -124,7 +127,7 @@ class PMCommand(commands.Cog):
 
         has_attachment(ctx)
 
-        message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, honor=honor)
+        message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, honor=f'{honor:,}')
 
         await _reply_for_approval(ctx, message)
 
@@ -140,7 +143,7 @@ class PMCommand(commands.Cog):
 
         has_attachment(ctx)
 
-        message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, stage=stage, score=score)
+        message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, stage=stage, score=f'{score:,}')
 
         await _reply_for_approval(ctx, message)
 
