@@ -81,55 +81,62 @@ class PMCommand(commands.Cog):
         return ctx.guild is None
 
     @commands.command("linkme", help="link your game account to discord.")
-    async def link_me(self, ctx, gov_id, name):
-        if get_player_by_discord_id(ctx.message.author.id):
+    async def link_me(self, ctx, gov_id: int, *, name: str):
+        # discord is not linked
+        discord_id = ctx.message.author.id
+        if get_player_by_discord_id(discord_id):
             return await ctx.send(f'You are already linked to gov_id: {player.gov_id}')
 
+        # player is not linked
         if get_identity_by_gov_id(gov_id):
             return await ctx.send(f"The gov_id {gov_id} has been linked already")
 
-        alliance_name = _get_alliance_name(ctx)
-
         has_attachment(ctx)
-        discord_id = ctx.message.author.id
+
+        alliance_name = _get_alliance_name(ctx, discord_id)
         message = _format_message(ctx, gov_id=gov_id, name=name, alliance=alliance_name, discord_id=discord_id)
-        reply = await ctx.message.reply(message)
-        await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
-        await reply.add_reaction(settings.get("DECLINED_EMOJI"))
+
+        await _reply_for_approval(ctx, message)
 
     @commands.command("mykill", help="submit the kill data")
     @enabled_by('DM_COMMAND_MY_KILL_ENABLED')
     async def my_kill(self, ctx, t4: int, t5: int, death: int, gov_id: int = None):
+        # find player either by linkage or provided gov id
         player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
+
         has_attachment(ctx)
+
         message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, t4=t4, t5=t5, death=death)
-        reply = await ctx.message.reply(message)
-        await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
-        await reply.add_reaction(settings.get("DECLINED_EMOJI"))
-        await ctx.send('Please react on message to approve or cancel your request')
+
+        await _reply_for_approval(ctx, message)
 
     @commands.command("myhonor", help="submit the honor data")
     @enabled_by('DM_COMMAND_MY_HONOR_ENABLED')
     async def my_honor(self, ctx, honor: int, gov_id: int = None):
+        # find player either by linkage or provided gov id
         player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
+
         has_attachment(ctx)
+
         message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, honor=honor)
-        reply = await ctx.message.reply(message)
-        await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
-        await reply.add_reaction(settings.get("DECLINED_EMOJI"))
-        await ctx.send('Please react on message to approve or cancel your request')
+
+        await _reply_for_approval(ctx, message)
 
     @commands.command("myscore", help="submit the pre-kvk score")
     @enabled_by('DM_COMMAND_MY_SCORE_ENABLED')
     async def my_score(self, ctx, stage: int, score: int, gov_id: int = None):
-        assert stage in (1, 2, 3), f'stage expected to be 1,2,3'
+        # find player either by linkage or provided gov id
         player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
+
+        # validate stage
+        if stage not in (1, 2, 3):
+            return await ctx.send(f'stage expected to be 1,2,3')
+
         has_attachment(ctx)
+
         message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, stage=stage, score=score)
-        reply = await ctx.message.reply(message)
-        await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
-        await reply.add_reaction(settings.get("DECLINED_EMOJI"))
-        await ctx.send('Please react on message to approve or cancel your request')
+
+        await _reply_for_approval(ctx, message)
 
     @commands.command("myinfo", help="check your info.")
     async def my_info(self, ctx):
@@ -145,16 +152,13 @@ class PMCommand(commands.Cog):
     async def my_new_name(self, ctx, *, newname):
         player = _get_player_by_ctx(ctx)
         message = _format_message(ctx, gov_id=player.gov_id, oldname=player.current_name, newname=newname)
-        reply = await ctx.message.reply(message)
-        await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
-        await reply.add_reaction(settings.get("DECLINED_EMOJI"))
-        await ctx.send('Please react on message to complete or cancel your rename')
+        await _reply_for_approval(ctx, message)
 
 
-def _get_alliance_name(ctx):
+def _get_alliance_name(ctx, discord_id):
     guild = discord.utils.get(ctx.bot.guilds, id=GuildSettings.get(name='kingdom').id)
     for n in list_all_alliance_names():
-        if has_role(guild, n, ctx.author.id):
+        if has_role(guild, n, discord_id):
             return n
     else:
         return 'unknown'
@@ -172,6 +176,15 @@ class OfficerOnly(commands.Cog):
                 ctx.send("You don't have officer role to use this command.")
                 return False
 
+    @commands.command('add', help="add a new player with id and name")
+    async def add(self, ctx, gov_id: int, *, name: str):
+        if get_player_by_id(gov_id):
+            return await ctx.send(f'{gov_id=} exists already')
+
+        message = _format_message(ctx, gov_id=gov_id, name=name)
+
+        await _reply_for_approval(ctx, message)
+
     @commands.command("link", help="link player to discord account.")
     async def link(self, ctx, mention, gov_id: int, *, name: str = ''):
         if not re.match("<@!\d+>", mention):
@@ -182,14 +195,14 @@ class OfficerOnly(commands.Cog):
         if not get_player_by_id(gov_id) and not name:
             return await ctx.send(f"Please provide in-game name as well: `!link @usename {gov_id} <player_name>`")
 
-        alliance_name = _get_alliance_name(ctx)
-
+        alliance_name = _get_alliance_name(ctx, discord_id)
         message = _format_message(ctx, gov_id=gov_id, name=name, alliance=alliance_name, discord_id=discord_id)
-        reply = await ctx.message.reply(message)
-        await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
-        await reply.add_reaction(settings.get("DECLINED_EMOJI"))
+
+        await _reply_for_approval(ctx, message)
+
+        # Hint
         if get_identity_by_gov_id(gov_id):
-            await ctx.send(f"The gov_id {gov_id} has been linked already")
+            await ctx.send(f"Hint: gov_id {gov_id} has been linked already")
 
     @commands.command("rename", help="update player in-game name.")
     async def rename(self, ctx, gov_id, *, name):
@@ -252,3 +265,10 @@ def _get_player_by_ctx(ctx):
 
     raise commands.errors.BadArgument(
         "Your game id is not linked to with your discord, Hint: use `!linkme`")
+
+
+async def _reply_for_approval(ctx, reply_message):
+    reply = await ctx.message.reply(reply_message)
+    await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
+    await reply.add_reaction(settings.get("DECLINED_EMOJI"))
+    await ctx.send('Please react on message to approve or cancel your request')
