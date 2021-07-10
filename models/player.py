@@ -25,7 +25,3 @@ class Player(Base):
         from models import RecordingEvent
         event = RecordingEvent.select().order_by(RecordingEvent.datetime_created.desc()).first()
         return self.records.filter(event=event)
-
-    def get_discord_id(self):
-        from models import IdentityLinkage
-        return IdentityLinkage.filter(player=self).order_by(IdentityLinkage.datetime_created.desc()).first()

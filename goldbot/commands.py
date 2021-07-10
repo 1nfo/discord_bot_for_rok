@@ -10,7 +10,7 @@ from settings.discord_guild_settings import GuildSettings
 from transactions.alliances import list_all_alliance_names
 from transactions.notes import add_player_note
 from transactions.players import (
-    update_name, search_player,
+    search_player,
     get_player_by_id,
     get_player_by_discord_id,
     get_identity_by_gov_id
@@ -84,7 +84,8 @@ class PMCommand(commands.Cog):
     async def link_me(self, ctx, gov_id: int, *, name: str):
         # discord is not linked
         discord_id = ctx.message.author.id
-        if get_player_by_discord_id(discord_id):
+        player = get_player_by_discord_id(discord_id)
+        if player:
             return await ctx.send(f'You are already linked to gov_id: {player.gov_id}')
 
         # player is not linked
@@ -180,8 +181,8 @@ class OfficerOnly(commands.Cog):
     async def add(self, ctx, gov_id: int, *, name: str):
         if get_player_by_id(gov_id):
             return await ctx.send(f'{gov_id=} exists already')
-
-        message = _format_message(ctx, gov_id=gov_id, name=name)
+        # not tag for add command for non-forwarding message
+        message = _format_message(ctx, gov_id=gov_id, name=name, tag_author=False)
 
         await _reply_for_approval(ctx, message)
 
@@ -196,7 +197,9 @@ class OfficerOnly(commands.Cog):
             return await ctx.send(f"Please provide in-game name as well: `!link @usename {gov_id} <player_name>`")
 
         alliance_name = _get_alliance_name(ctx, discord_id)
-        message = _format_message(ctx, gov_id=gov_id, name=name, alliance=alliance_name, discord_id=discord_id)
+        # not tag for add command for non-forwarding message
+        message = _format_message(
+            ctx, gov_id=gov_id, name=name, alliance=alliance_name, discord_id=discord_id, tag_author=False)
 
         await _reply_for_approval(ctx, message)
 
@@ -209,8 +212,12 @@ class OfficerOnly(commands.Cog):
         player = get_player_by_id(gov_id)
         if not player:
             return await ctx.send(f'{gov_id=} does not exist')
-        update_name(player, name)
-        await ctx.message.add_reaction(settings.get('SUCCEED_EMOJI'))
+        if player.current_name == name:
+            return await ctx.send(f'new name is same as old name.')
+
+        # not tag for add command for non-forwarding message
+        message = _format_message(ctx, gov_id=gov_id, oldname=gov_id.current_name, newname=name, tag_author=False)
+        await _reply_for_approval(ctx, message)
 
     @commands.command('note', help='add note to player')
     async def note(self, ctx, gov_id, note_type, *, note):

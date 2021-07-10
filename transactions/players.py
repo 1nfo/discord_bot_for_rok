@@ -16,7 +16,7 @@ def get_identity_by_gov_id(gov_id):
 
 def get_player_by_discord_id(discord_id):
     linkage = IdentityLinkage.select().join(Identity).where(
-        Identity.id == discord_id and Identity.type == Identity.Type.Discord
+        Identity.external_id == discord_id and Identity.type == Identity.Type.Discord
     ).order_by(IdentityLinkage.datetime_created.desc()).first()
     return linkage.player if linkage else None
 
@@ -87,7 +87,7 @@ def upsert_player(gov_id, name, alliance=None, discord_id=None):
         if created or linkage.identity != identity:
             linkage.identity = identity
             linkage.save()
-            add_player_note(gov_id, 'INFO', 'linked to discord')
+            add_player_note(gov_id, 'INFO', f'linked to discord {identity.external_id}')
 
     return player
 
