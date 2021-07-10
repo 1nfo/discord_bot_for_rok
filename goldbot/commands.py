@@ -156,26 +156,18 @@ class PMCommand(commands.Cog):
         await _reply_for_approval(ctx, message)
 
 
-def _get_alliance_name(ctx, discord_id):
-    guild = discord.utils.get(ctx.bot.guilds, id=GuildSettings.get(name='kingdom').id)
-    for n in list_all_alliance_names():
-        if has_role(guild, n, discord_id):
-            return n
-    else:
-        return 'unknown'
-
-
 class OfficerOnly(commands.Cog):
     async def cog_check(self, ctx):
-        if await ctx.bot.is_owner(ctx.author):
-            return True
-        if ctx.channel == discord.ChannelType.text:
+        if ctx.message.channel.type == discord.ChannelType.text:
             guild_setting = GuildSettings.get(id=ctx.guild.id)
             if discord.utils.get(ctx.author.roles, id=guild_setting.officer_role_id):
                 return True
             else:
-                ctx.send("You don't have officer role to use this command.")
+                await ctx.send("You don't have officer role to use this command.")
                 return False
+        if ctx.message.channel.type == discord.ChannelType.private:
+            await ctx.send("Command can not be used in private channel")
+            return False
 
     @commands.command('add', help="add a new player with id and name")
     async def add(self, ctx, gov_id: int, *, name: str):
@@ -191,9 +183,10 @@ class OfficerOnly(commands.Cog):
         if not re.match("<@!\d+>", mention):
             return await ctx.send(f"please @ the user to link to: `!link @username {gov_id} {name}`")
         else:
-            discord_id = mention[3:-1]
+            discord_id = int(mention[3:-1])
 
-        if not get_player_by_id(gov_id) and not name:
+        name = name or getattr(get_player_by_id(gov_id), 'current_name', None)
+        if not name:
             return await ctx.send(f"Please provide in-game name as well: `!link @usename {gov_id} <player_name>`")
 
         alliance_name = _get_alliance_name(ctx, discord_id)
@@ -205,7 +198,7 @@ class OfficerOnly(commands.Cog):
 
         # Hint
         if get_identity_by_gov_id(gov_id):
-            await ctx.send(f"Hint: gov_id {gov_id} has been linked already")
+            await ctx.send(f"**{gov_id=} has been linked already**")
 
     @commands.command("rename", help="update player in-game name.")
     async def rename(self, ctx, gov_id, *, name):
@@ -263,6 +256,15 @@ def _format_message(ctx, tag_author=True, append_attachment=True, **kwargs):
         lines_to_send.append(ctx.message.attachments[0].url)
 
     return '\n'.join(lines_to_send)
+
+
+def _get_alliance_name(ctx, discord_id):
+    guild = discord.utils.get(ctx.bot.guilds, id=GuildSettings.get(name='kingdom').id)
+    for n in list_all_alliance_names():
+        if has_role(guild, n, discord_id):
+            return n
+    else:
+        return 'unknown'
 
 
 def _get_player_by_ctx(ctx):
