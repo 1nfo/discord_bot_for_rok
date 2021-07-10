@@ -81,9 +81,10 @@ class PMCommand(commands.Cog):
         return ctx.guild is None
 
     @commands.command("linkme", help="link your game account to discord.")
-    async def link_me(self, ctx, gov_id: int, *, name: str):
+    async def link_me(self, ctx, gov_id: int, *, name: str = ''):
         # discord is not linked
         discord_id = ctx.message.author.id
+
         player = get_player_by_discord_id(discord_id)
         if player:
             return await ctx.send(f'You are already linked to gov_id: {player.gov_id}')
@@ -91,6 +92,10 @@ class PMCommand(commands.Cog):
         # player is not linked
         if get_identity_by_gov_id(gov_id):
             return await ctx.send(f"The gov_id {gov_id} has been linked already")
+
+        name = name or getattr(get_player_by_id(gov_id), 'current_name', None)
+        if not name:
+            return await ctx.send(f"Please provide in-game name as well: `!link @usename {gov_id} <player_name>`")
 
         has_attachment(ctx)
 
