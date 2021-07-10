@@ -15,8 +15,7 @@ from transactions.players import (
     get_player_by_discord_id,
     get_identity_by_gov_id
 )
-from .utils import has_attachment, enabled_by
-from .utils import has_role
+from .utils import has_attachment, enabled_by, has_role, number
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
@@ -81,7 +80,7 @@ class PMCommand(commands.Cog):
         return ctx.guild is None
 
     @commands.command("linkme", help="link your game account to discord.")
-    async def link_me(self, ctx, gov_id: int, *, name: str = ''):
+    async def link_me(self, ctx, gov_id: number, *, name: str = ''):
         # discord is not linked
         discord_id = ctx.message.author.id
 
@@ -106,7 +105,7 @@ class PMCommand(commands.Cog):
 
     @commands.command("mykill", help="submit the kill data")
     @enabled_by('DM_COMMAND_MY_KILL_ENABLED')
-    async def my_kill(self, ctx, t4: int, t5: int, death: int, gov_id: int = None):
+    async def my_kill(self, ctx, t4: number, t5: number, death: number, gov_id: number = None):
         # find player either by linkage or provided gov id
         player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
 
@@ -121,7 +120,7 @@ class PMCommand(commands.Cog):
 
     @commands.command("myhonor", help="submit the honor data")
     @enabled_by('DM_COMMAND_MY_HONOR_ENABLED')
-    async def my_honor(self, ctx, honor: int, gov_id: int = None):
+    async def my_honor(self, ctx, honor: number, gov_id: number = None):
         # find player either by linkage or provided gov id
         player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
 
@@ -133,7 +132,7 @@ class PMCommand(commands.Cog):
 
     @commands.command("myscore", help="submit the pre-kvk score")
     @enabled_by('DM_COMMAND_MY_SCORE_ENABLED')
-    async def my_score(self, ctx, stage: int, score: int, gov_id: int = None):
+    async def my_score(self, ctx, stage: int, score: number, gov_id: number = None):
         # find player either by linkage or provided gov id
         player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
 
@@ -171,7 +170,7 @@ class OfficerOnly(commands.Cog):
             return discord.utils.get(ctx.author.roles, id=guild_setting.officer_role_id)
 
     @commands.command('add', help="add a new player with id and name")
-    async def add(self, ctx, gov_id: int, *, name: str):
+    async def add(self, ctx, gov_id: number, *, name: str):
         if get_player_by_id(gov_id):
             return await ctx.send(f'{gov_id=} exists already')
         # not tag for add command for non-forwarding message
@@ -180,7 +179,7 @@ class OfficerOnly(commands.Cog):
         await _reply_for_approval(ctx, message)
 
     @commands.command("link", help="link player to discord account.")
-    async def link(self, ctx, mention, gov_id: int, *, name: str = ''):
+    async def link(self, ctx, mention, gov_id: number, *, name: str = ''):
         if not re.match("<@!\d+>", mention):
             return await ctx.send(f"please @ the user to link to: `!link @username {gov_id} {name}`")
         else:
@@ -202,7 +201,7 @@ class OfficerOnly(commands.Cog):
             await ctx.send(f"**{gov_id=} has been linked already**")
 
     @commands.command("rename", help="update player in-game name.")
-    async def rename(self, ctx, gov_id, *, name):
+    async def rename(self, ctx, gov_id: number, *, name):
         player = get_player_by_id(gov_id)
         if not player:
             return await ctx.send(f'{gov_id=} does not exist')
@@ -214,7 +213,7 @@ class OfficerOnly(commands.Cog):
         await _reply_for_approval(ctx, message)
 
     @commands.command('note', help='add note to player')
-    async def note(self, ctx, gov_id, note_type, *, note):
+    async def note(self, ctx, gov_id: number, note_type, *, note):
         player = get_player_by_id(gov_id)
         if not player:
             return await ctx.send(f"Error: {gov_id=} does not exist.")

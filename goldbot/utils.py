@@ -6,6 +6,10 @@ from discord.ext.commands import errors
 import settings
 
 
+def number(s):
+    return int(s.replace(',', ''))
+
+
 def has_role(guild, role, user_id):
     if not guild:
         return False
