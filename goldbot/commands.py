@@ -174,15 +174,17 @@ class OfficerOnly(commands.Cog):
 
     @commands.command("link", help="link player to discord account.")
     async def link(self, ctx, mention, gov_id: int, *, name: str = ''):
-        if not re.match("<@\d+>", mention):
+        if not re.match("<@!\d+>", mention):
             return await ctx.send(f"please @ the user to link to: `!link @username {gov_id} {name}`")
+        else:
+            discord_id = mention[3:-1]
 
         if not get_player_by_id(gov_id) and not name:
             return await ctx.send(f"Please provide in-game name as well: `!link @usename {gov_id} <player_name>`")
 
         alliance_name = _get_alliance_name(ctx)
 
-        message = _format_message(ctx, gov_id=gov_id, name=name, alliance=alliance_name, discord_id=mention[2:-1])
+        message = _format_message(ctx, gov_id=gov_id, name=name, alliance=alliance_name, discord_id=discord_id)
         reply = await ctx.message.reply(message)
         await reply.add_reaction(settings.get("APPROVAL_EMOJI"))
         await reply.add_reaction(settings.get("DECLINED_EMOJI"))
