@@ -13,7 +13,6 @@ KVK3_BACK_FILL_EVENT_NAME = "kvk 3 back fill"
 KVK3_BACK_FILL_DATE = datetime.datetime(2021, 5, 12)
 
 
-@etl_job
 def pull_930x_kvk3_member_sheet():
     sheet = Sheet(
         id='1sYXnaOVIeD1tmittd_zuVSZlJATlgpgtjInAYlMCqng',
@@ -31,7 +30,6 @@ def pull_930x_kvk3_member_sheet():
         add_player_note(player.gov_id, 'INFO', 'Was in KvK3', KVK3_BACK_FILL_DATE)
 
 
-@etl_job
 def pull_930x_kvk3_kill_sheet():
     sheet = settings.get('KILL_SHEET')
     data = get_sheet_data(sheet)

@@ -237,14 +237,17 @@ class Admin(commands.Cog):
         except Exception as e:
             await ctx.send(str(e))
 
-    @commands.command("exec", help="exec")
-    async def exec(self, ctx, *, arg):
-        # noinspection PyUnresolvedReferences
+    @commands.command("run", help="exec")
+    async def run(self, ctx, *, arg):
         from etl import JOBS
         try:
-            exec(arg)
+            await ctx.send(f'running {arg}')
+            await JOBS[arg](ctx)
         except Exception as e:
-            await ctx.send(str(e))
+            logger.exception(f'not able to run {arg}')
+            await ctx.send(repr(e))
+        finally:
+            await ctx.send(f'finished {arg}')
 
 
 def _format_message(ctx, tag_author=True, append_attachment=True, **kwargs):

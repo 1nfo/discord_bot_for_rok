@@ -16,7 +16,7 @@ def get_identity_by_gov_id(gov_id):
 
 def get_player_by_discord_id(discord_id):
     linkage = IdentityLinkage.select().join(Identity).where(
-        Identity.external_id == discord_id and Identity.type == Identity.Type.Discord
+        (Identity.external_id == discord_id) & (Identity.type == Identity.Type.Discord)
     ).order_by(IdentityLinkage.datetime_created.desc()).first()
     return linkage.player if linkage else None
 
