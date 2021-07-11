@@ -46,7 +46,7 @@ def enabled_by(setting_name):
 def convert_to_dict(lines):
     args = {}
     for line in lines:
-        k, v = line.split(':', maxsplit=2)
+        k, v = line.split(':', maxsplit=1)
         args[k.strip()] = v.strip()
     return args
 

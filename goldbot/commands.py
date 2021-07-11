@@ -7,6 +7,7 @@ from discord.ext import commands
 
 import settings
 from settings.discord_guild_settings import GuildSettings
+from transactions import events
 from transactions.notes import add_player_note
 from transactions.players import (
     search_player,
@@ -248,6 +249,21 @@ class Admin(commands.Cog):
             await ctx.send(repr(e))
         finally:
             await ctx.send(f'finished {arg}')
+
+    @commands.command('event', help='event')
+    async def event(self, ctx, command=None, *, arg=None):
+        if command is None:
+            await ctx.send("\n".join([f"{t}" for t in events.list_all_events()]))
+        elif command == 'add':
+            await ctx.send(f'{events.add_new_event(arg).__data__}')
+        elif command == 'rename':
+            await ctx.send(f'{events.rename(*arg.split(" ", maxsplit=1))}')
+        elif command == 'open':
+            await ctx.send(f'{events.open_event(int(arg))}')
+        elif command == 'close':
+            await ctx.send(f'{events.close_event()}')
+        else:
+            await ctx.send(f'{command} not recognized')
 
 
 def _format_message(ctx, tag_author=True, append_attachment=True, **kwargs):
