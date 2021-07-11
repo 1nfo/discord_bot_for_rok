@@ -17,7 +17,7 @@ def get_identity_by_gov_id(gov_id):
 def get_player_by_discord_id(discord_id):
     linkage = IdentityLinkage.select().join(Identity).where(
         (Identity.external_id == discord_id) & (Identity.type == Identity.Type.Discord)
-    ).order_by(IdentityLinkage.datetime_created.desc()).first()
+    ).order_by(IdentityLinkage.type.asc()).first()
     return linkage.player if linkage else None
 
 
@@ -65,7 +65,6 @@ def create_new_player(gov_id, name):
 @db.atomic()
 def upsert_player(gov_id, name, alliance=None, discord_id=None):
     from transactions.notes import add_player_note
-
     # create player
     player = Player.get_or_none(gov_id=gov_id)
     if not player:
@@ -83,11 +82,18 @@ def upsert_player(gov_id, name, alliance=None, discord_id=None):
 
     if discord_id:
         identity, _ = Identity.get_or_create(external_id=discord_id)
-        linkage, created = IdentityLinkage.get_or_create(player=player, defaults=dict(identity=identity))
-        if created or linkage.identity != identity:
-            linkage.identity = identity
-            linkage.save()
-            add_player_note(gov_id, 'INFO', f'linked to discord {identity.external_id}')
+        linkages = IdentityLinkage.filter(identity=identity)
+        # first linkage, assume it is main
+        if not linkages.exists():
+            linkage_type = IdentityLinkage.Type.Main
+        # make sure it is not linked already
+        elif not linkages.filter(player=player).exists():
+            linkage_type = IdentityLinkage.Type.Sub
+        else:
+            return player
+        # remove linkage player to others to guarantee only it links to one identity
+        IdentityLinkage.create(player=player, identity=identity, type=linkage_type)
+        add_player_note(gov_id, 'INFO', f'linked to discord {identity.external_id}')
 
     return player
 
