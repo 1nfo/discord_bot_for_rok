@@ -21,6 +21,12 @@ def get_player_by_discord_id(discord_id):
     return linkage.player if linkage else None
 
 
+def get_players_by_discord_id(discord_id):
+    return list(IdentityLinkage.select().join(Identity).where(
+        (Identity.external_id == discord_id) & (Identity.type == Identity.Type.Discord)
+    ).order_by(IdentityLinkage.type.asc()))
+
+
 def search_player(name):
     if name.isdigit():
         q = Player.filter(gov_id=name)

@@ -195,7 +195,10 @@ class OfficerOnly(commands.Cog):
             return await ctx.send(f"Please provide in-game name as well: `!link @usename {gov_id} <player_name>`")
 
         guild = discord.utils.get(ctx.bot.guilds, id=GuildSettings.get(name='kingdom').id)
-        alliance_name = get_alliance_name(guild, discord_id)
+        if get_player_by_discord_id(ctx.message.author.id):
+            alliance_name = 'unknown'
+        else:
+            alliance_name = get_alliance_name(guild, discord_id)
         # not tag for add command for non-forwarding message
         message = _format_message(
             ctx, gov_id=gov_id, name=name, alliance=alliance_name, discord_id=discord_id, tag_author=False)
@@ -290,7 +293,7 @@ def _get_player_by_ctx(ctx):
         return player
 
     raise commands.errors.BadArgument(
-        "Your game id is not linked to with your discord, Hint: use `!linkme`")
+        "Your game id is not linked to your discord, Hint: use `!linkme`")
 
 
 async def _reply_for_approval(ctx, reply_message):
