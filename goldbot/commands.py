@@ -30,6 +30,16 @@ class Query(commands.Cog):
         if channel.type == discord.ChannelType.text:
             return channel.name in settings.get('LISTENING_CHANNELS')
 
+    @commands.command("myinfo", help="check your info.")
+    async def my_info(self, ctx):
+        player = _get_player_by_ctx(ctx)
+        message = _format_message(
+            ctx, gov_id=player.gov_id, name=player.current_name, alliance=player.alliance.name, tag_author=False)
+        records = {r.type: r.value for r in player.get_recent_records()}
+        if records:
+            message += f"Your previous submission:" + _format_message(ctx, tag_author=False, **records)
+        return await ctx.send(message)
+
     @commands.command("whois", help="look up member by name or id.")
     async def whois(self, ctx, *, name_or_id):
         player, names = search_player(name_or_id)
@@ -150,16 +160,6 @@ class PMCommand(commands.Cog):
         message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, stage=stage, score=f'{score:,}')
 
         await _reply_for_approval(ctx, message)
-
-    @commands.command("myinfo", help="check your info.")
-    async def my_info(self, ctx):
-        player = _get_player_by_ctx(ctx)
-        message = _format_message(
-            ctx, gov_id=player.gov_id, name=player.current_name, alliance=player.alliance.name, tag_author=False)
-        records = {r.type: r.value for r in player.get_recent_records()}
-        if records:
-            message += f"Your previous submission:" + _format_message(ctx, tag_author=False, **records)
-        return await ctx.send(message)
 
     @commands.command("mynewname", help="rename your in-game name.")
     async def my_new_name(self, ctx, *, newname):
