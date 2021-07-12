@@ -36,7 +36,7 @@ def search_player(name):
     if q.count() == 1:
         return q.get(), []
 
-    matched = list(filter(lambda x: name.lower() in x.name.lower(), UsedName.select()))
+    matched = [x for x in UsedName.select() if name.lower() in x.name.lower() and x.player.alliance_name]
     if len(matched) == 1:
         return matched[0].player, []
 
