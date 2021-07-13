@@ -7,10 +7,9 @@ from transactions.players import update_name
 
 
 async def execute(message, reaction_name, guilds):
-    await message.remove_reaction(settings.get("APPROVAL_EMOJI"), message.author)
-    await message.remove_reaction(settings.get("DECLINED_EMOJI"), message.author)
-
     if reaction_name == settings.get("DECLINED_EMOJI"):
+        await message.remove_reaction(settings.get("APPROVAL_EMOJI"), message.author)
+        await message.remove_reaction(settings.get("DECLINED_EMOJI"), message.author)
         return await message.add_reaction(settings.get("FAILURE_EMOJI"))
 
     if reaction_name == settings.get("APPROVAL_EMOJI"):
@@ -22,6 +21,8 @@ async def execute(message, reaction_name, guilds):
         else:
             await _forward(message, guilds, command)
 
+        await message.remove_reaction(settings.get("APPROVAL_EMOJI"), message.author)
+        await message.remove_reaction(settings.get("DECLINED_EMOJI"), message.author)
         return await message.add_reaction(settings.get("SUCCEED_EMOJI"))
 
 

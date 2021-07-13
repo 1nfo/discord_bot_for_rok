@@ -133,15 +133,26 @@ class PMCommand(commands.Cog):
 
         await _reply_for_approval(ctx, message)
 
-    @commands.command("myhonor", help="submit the honor data")
-    @enabled_by('DM_COMMAND_MY_HONOR_ENABLED')
-    async def my_honor(self, ctx, honor: number, gov_id: number = None):
+    @commands.command("mydeath", help="submit the death data")
+    @enabled_by('DM_COMMAND_MY_DEATH_ENABLED')
+    async def my_death(
+            self, ctx,
+            t4_cav: number, t4_inf: number, t4_archer: number, t4_siege: number,
+            t5_cav: number, t5_inf: number, t5_archer: number, t5_siege: number,
+            gov_id: number = None
+    ):
         # find player either by linkage or provided gov id
         player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
 
         has_attachment(ctx)
 
-        message = _format_message(ctx, gov_id=player.gov_id, name=player.current_name, honor=f'{honor:,}')
+        message = _format_message(
+            ctx, gov_id=player.gov_id, name=player.current_name,
+            t4_cav_death=f'{t4_cav:,}', t4_inf_death=f'{t4_inf:,}',
+            t4_archer_death=f'{t4_archer:,}', t4_siege_death=f'{t4_siege:,}',
+            t5_cav_death=f'{t5_cav:,}', t5_inf_death=f'{t5_inf:,}',
+            t5_archer_death=f'{t5_archer:,}', t5_siege_death=f'{t5_siege:,}',
+        )
 
         await _reply_for_approval(ctx, message)
 

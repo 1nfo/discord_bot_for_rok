@@ -28,7 +28,6 @@ GuildSettings(
     channels={
         'linkme': 862607708179267594,
         'mykill': 862609422752677938,
-        'myhonor': 862609554671009842,
         'myscore': 862609478263767051,
     },
 )
@@ -58,7 +57,6 @@ GuildSettings(
     approver_role_id=858884620456165378,
     request_role_id=858884620456165378,
     kill_channel_id=825807687517601842,
-    honor_channel_id=825807687517601842,
     prekvk_channel_ids=[825807687517601842, 825807687517601842, 825807687517601842],
     channels={
         'linkme': 825807687517601842,

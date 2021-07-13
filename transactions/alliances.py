@@ -28,5 +28,5 @@ def update_alliance(player, alliance):
         old_alliance = player.alliance
         player.alliance = alliance
         player.save()
-        add_player_note(player.gov_id, 'INFO', f'changed alliance {old_alliance.name}  => {alliance.name}')
+        add_player_note(player.gov_id, 'INFO', f'changed alliance {old_alliance}  => {alliance.name}')
         return True
