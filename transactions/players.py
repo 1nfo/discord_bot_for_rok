@@ -1,6 +1,10 @@
+from typing import Union
+
 from fuzzywuzzy import process
 
-from models import Player, Alliance, UsedName, Identity, IdentityLinkage, db
+from models import Player, UsedName, Identity, IdentityLinkage, db
+
+_UNDEFINED = object()
 
 
 def get_player_by_id(gov_id):
@@ -69,22 +73,16 @@ def create_new_player(gov_id, name):
 
 
 @db.atomic()
-def upsert_player(gov_id, name, alliance=None, discord_id=None):
+def upsert_player(gov_id, name, alliance: Union[str, None] = _UNDEFINED, discord_id=None):
     from transactions.notes import add_player_note
+    from transactions.alliances import update_alliance
     # create player
     player = Player.get_or_none(gov_id=gov_id)
     if not player:
         player = create_new_player(gov_id, name)
 
-    # update alliance
-    if isinstance(alliance, str):
-        alliance = Alliance.get(name=alliance.strip())
-    if isinstance(alliance, Alliance):
-        old_alliance = player.alliance
-        player.alliance = alliance
-        player.save()
-        if old_alliance:
-            add_player_note(gov_id, 'INFO', f'changed alliance {old_alliance.name}  => {alliance.name}')
+    if alliance is not _UNDEFINED:
+        update_alliance(player, alliance=alliance)
 
     if discord_id:
         identity, _ = Identity.get_or_create(external_id=discord_id)

@@ -12,7 +12,7 @@ stats = None
 @etl_job
 async def refresh_alliance_name_and_check_unlinked_identity(ctx):
     from settings.discord_guild_settings import GuildSettings
-    from transactions import players
+    from transactions import players, alliances
     from goldbot.utils import get_alliance_name
 
     guild_setting = GuildSettings.get(name='kingdom')
@@ -29,6 +29,7 @@ async def refresh_alliance_name_and_check_unlinked_identity(ctx):
         alliance_name = get_alliance_name(guild, member.id)
         if player:
             if player.alliance_name != alliance_name:
+                alliances.update_alliance(player, alliance_name)
                 stats['alliance_updated'][alliance_name].append(f'`{member.name}`')
                 count['alliance_updated'] += 1
             count['linked'] += 1

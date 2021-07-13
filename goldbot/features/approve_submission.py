@@ -25,8 +25,8 @@ async def execute(message, payload):
         await message.add_reaction(settings.get("FAILURE_EMOJI"))
         return await message.reply(f'unrecognized {command=}')
 
-    await message.add_reaction(settings.get("SUCCEED_EMOJI"))
     await message.remove_reaction(settings.get("APPROVAL_EMOJI"), message.author)
     await message.remove_reaction(settings.get("DECLINED_EMOJI"), message.author)
+    await message.add_reaction(settings.get("SUCCEED_EMOJI"))
     if message.mentions:
         await message.mentions[0].send(f"You submission has been approved by {payload.member.mention}")
