@@ -200,7 +200,7 @@ class OfficerOnly(commands.Cog):
 
     @commands.command("link", help="link player to discord account.")
     async def link(self, ctx, mention, gov_id: number, *, name: str = ''):
-        if not re.match("<@!\d+>", mention):
+        if not re.match(r"^<@!\d+>$", mention):
             return await ctx.send(f"please @ the user to link to: `!link @username {gov_id} {name}`")
         else:
             discord_id = int(mention[3:-1])

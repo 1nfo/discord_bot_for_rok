@@ -17,9 +17,9 @@ class Player(Base):
         return self.notes.where(PlayerNote.type.in_(note_types)).order_by(PlayerNote.datetime_created.desc()).limit(
             limit)
 
-    @cached_property
+    @property
     def alliance_name(self):
-        return self.alliance.name if self.alliance else None
+        return self.alliance.name
 
     def get_recent_records(self):
         from models import RecordingEvent
