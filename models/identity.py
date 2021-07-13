@@ -13,3 +13,7 @@ class Identity(Base):
     type = IntegerField(choices=Type.__members__.values(), default=Type.Discord)
     name = CharField(null=True)
     external_id = CharField(unique=True)
+
+    @property
+    def discord_id(self):
+        return int(self.external_id)

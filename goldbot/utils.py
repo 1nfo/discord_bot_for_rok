@@ -1,3 +1,4 @@
+import logging
 from functools import wraps
 
 import discord
@@ -14,7 +15,7 @@ def has_role(guild, role, user_id):
     if not guild:
         return False
 
-    member = guild.get_member(user_id)
+    member = guild.get_member(int(user_id))
     if not member:
         return False
 
@@ -58,3 +59,14 @@ def get_alliance_name(guild, discord_id):
             return n
     else:
         return 'unknown'
+
+
+def no_raise(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except Exception:
+            logging.exception(f'ignore error for {f.__name__}')
+
+    return wrapper

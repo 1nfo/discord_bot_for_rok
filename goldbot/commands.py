@@ -8,6 +8,7 @@ from discord.ext import commands
 import settings
 from settings.discord_guild_settings import GuildSettings
 from transactions import events
+from transactions.alliances import update_alliance
 from transactions.notes import add_player_note
 from transactions.players import (
     search_player,
@@ -15,7 +16,7 @@ from transactions.players import (
     get_player_by_discord_id,
     get_identity_by_gov_id
 )
-from .utils import has_attachment, enabled_by, number, get_alliance_name
+from .utils import has_attachment, enabled_by, number, get_alliance_name, no_raise
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
@@ -33,6 +34,7 @@ class Query(commands.Cog):
     @commands.command("myinfo", help="check your info.")
     async def my_info(self, ctx):
         player = _get_player_by_ctx(ctx)
+        _refresh_alliance(player, ctx, ctx.message.author.id)
         message = _format_message(
             ctx, gov_id=player.gov_id, name=player.current_name, alliance=player.alliance.name, tag_author=False)
         records = {r.type: r.value for r in player.get_recent_records()}
@@ -52,8 +54,10 @@ class Query(commands.Cog):
                 return await ctx.send(f"{', '.join(map(lambda x: f'`{x}`', names))} Who are you talking about?")
 
         if identity := get_identity_by_gov_id(player.gov_id):
-            member = _get_discord_member(ctx, int(identity.external_id))
+            _refresh_alliance(player, ctx, identity.discord_id)
+            member = _get_discord_member(ctx, identity.discord_id)
             identity = member and member.name
+
         notes_q = player.get_notes()
         notes = {
             f'note-{i:02}': f'{n.type.name} on {n.datetime_created.date().isoformat()} - {n.content}'
@@ -317,3 +321,11 @@ async def _reply_for_approval(ctx, reply_message):
 def _get_discord_member(ctx, discord_id):
     guild = discord.utils.get(ctx.bot.guilds, id=GuildSettings.get(name='kingdom').id)
     return guild.get_member(discord_id)
+
+
+@no_raise
+def _refresh_alliance(player, ctx, discord_id):
+    if player:
+        guild = discord.utils.get(ctx.bot.guilds, id=GuildSettings.get(name='kingdom').id)
+        alliance_name = get_alliance_name(guild, discord_id)
+        update_alliance(player, alliance_name)
