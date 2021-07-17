@@ -257,8 +257,10 @@ class Admin(commands.Cog):
             await ctx.send(str(e))
 
     @commands.command("run", help="exec")
-    async def run(self, ctx, *, arg):
+    async def run(self, ctx, *, arg=None):
         from etl import JOBS
+        if arg is None:
+            return await ctx.send(f'{JOBS.keys()}')
         try:
             await ctx.send(f'running {arg}')
             await JOBS[arg](ctx)
