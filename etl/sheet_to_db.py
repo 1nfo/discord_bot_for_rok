@@ -47,7 +47,7 @@ def pull_930x_kvk3_kill_sheet():
             return create_record(player_.gov_id, record_type, value, event, KVK3_BACK_FILL_DATE)
 
     for i in data.index:
-        player = Player.get(data[sheet.col_id][i])
+        player = Player.get(gov_id=data[sheet.col_id][i].replace(",", ""))
         _create_record(player, Record.Type.T4, data[sheet.col_t4][i])
         _create_record(player, Record.Type.T5, data[sheet.col_t5][i])
         _create_record(player, Record.Type.Death, data[sheet.col_death][i])

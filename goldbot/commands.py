@@ -25,13 +25,6 @@ logger = logging.getLogger(__name__)
 
 
 class Query(commands.Cog):
-    def cog_check(self, ctx):
-        channel = ctx.message.channel
-        if channel.type == discord.ChannelType.private:
-            return True
-        if channel.type == discord.ChannelType.text:
-            return channel.name in settings.get('LISTENING_CHANNELS')
-
     @commands.command("myinfo", help="check your info.")
     async def my_info(self, ctx):
         player = _get_player_by_ctx(ctx)
@@ -284,7 +277,7 @@ class Admin(commands.Cog):
     @commands.command('event', help='event')
     async def event(self, ctx, command=None, *, arg=None):
         if command is None:
-            await ctx.send("\n".join([f"{t}" for t in events.list_all_events()]))
+            await ctx.send("\n".join([f"{t.datetime_created.date()} - `{t.name}`" for t in events.list_all_events()]))
         elif command == 'add':
             await ctx.send(f'{events.add_new_event(arg).__data__}')
         elif command == 'rename':

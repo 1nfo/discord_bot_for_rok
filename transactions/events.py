@@ -6,7 +6,7 @@ from models import RecordingEvent as Event
 
 
 def list_all_events():
-    return Event.select().tuples()
+    return Event.select().order_by(Event.datetime_created.desc())
 
 
 def add_new_event(name):
@@ -42,8 +42,8 @@ def report_event(event):
 
     for record in event.records:
         report_data[record.player].update({
+            'last_update': f'{record.datetime_created.date()}',
             record.type: record.value,
-            'last_update': f'{record.datetime_created.date()}'
         })
     return DataFrame([
         dict(

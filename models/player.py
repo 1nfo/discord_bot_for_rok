@@ -19,7 +19,7 @@ class Player(Base):
 
     @property
     def alliance_name(self):
-        return self.alliance.name
+        return getattr(self.alliance, 'name', 'None')
 
     def get_recent_records(self):
         from models import RecordingEvent
