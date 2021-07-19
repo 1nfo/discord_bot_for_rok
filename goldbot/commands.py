@@ -239,8 +239,11 @@ class OfficerOnly(commands.Cog):
         await ctx.message.add_reaction(settings.get('SUCCEED_EMOJI'))
 
     @commands.command('report', help='report records submitted by player')
-    async def report(self, ctx, *, event_name):
+    async def report(self, ctx, *, event_name=None):
         try:
+            if event_name is None:
+                return await ctx.send(f'Please choose one of the options to generate report:\n'
+                                      f'{", ".join([f"`{e.name}`" for e in events.get_events()])}')
             sheet_link = dump_records_to_sheet(event_name, settings.get("BOT_REPORT_GOOGLE_SHEET_ID"))
         except Exception as e:
             logger.exception(f'Not able to generate report for {event_name}')
@@ -277,7 +280,7 @@ class Admin(commands.Cog):
     @commands.command('event', help='event')
     async def event(self, ctx, command=None, *, arg=None):
         if command is None:
-            await ctx.send("\n".join([f"{t.datetime_created.date()} - `{t.name}`" for t in events.list_all_events()]))
+            await ctx.send("\n".join([f"{t.__data__}`" for t in events.list_all_events()]))
         elif command == 'add':
             await ctx.send(f'{events.add_new_event(arg).__data__}')
         elif command == 'rename':

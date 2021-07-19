@@ -28,6 +28,8 @@ def close_event():
 
 
 def get_events(*event_names):
+    if not event_names:
+        return Event.select()
     events = []
     for event_name in event_names:
         event = Event.get_or_none(name=event_name)
