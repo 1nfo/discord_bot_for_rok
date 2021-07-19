@@ -1,10 +1,12 @@
 import logging
 import re
+from typing import List
 
 import numpy as np
 import pandas as pd
 from google.oauth2 import service_account
 from googleapiclient import discovery
+from pandas import DataFrame
 
 import settings
 
@@ -80,3 +82,33 @@ def upsert_sheet_data(sheet, id, row, data=None, return_message=False):
             return f"Data updated."
         else:
             return True
+
+
+def upsert_new_sheet(sheet_id: str, name: str, data: List[List]):
+    gid = _insert_sheet_if_needed(sheet_id, name)
+    sheet_range = f"{name}!A1:Z{len(data)}"
+    service.spreadsheets().values().update(
+        spreadsheetId=sheet_id,
+        range=sheet_range,
+        valueInputOption='USER_ENTERED',
+        body={
+            'range': sheet_range,
+            'majorDimension': 'ROWS',
+            'values': data
+        }
+    ).execute()
+    return gid
+
+
+def _insert_sheet_if_needed(sheet_id, name):
+    response = service.spreadsheets().get(spreadsheetId=sheet_id).execute()
+    sheets = {s['properties']['title']: s['properties']['sheetId'] for s in response['sheets']}
+    if name not in sheets:
+        return service.spreadsheets().batchUpdate(
+            spreadsheetId=sheet_id,
+            body={'requests': [
+                {'addSheet': {'properties': {'title': name}}}
+            ]}
+        ).execute()['replies'][0]['addSheet']['properties']['sheetId']
+    else:
+        return sheets[name]

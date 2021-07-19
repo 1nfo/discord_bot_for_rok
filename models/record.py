@@ -27,6 +27,6 @@ class Record(Base):
         Stage3 = 'stage3'
 
     player = ForeignKeyField(Player, index=True, backref='records')
-    event = ForeignKeyField(RecordingEvent)
+    event = ForeignKeyField(RecordingEvent, backref='records')
     type = CharField(choices=Type.__members__.values())
     value = CharField()

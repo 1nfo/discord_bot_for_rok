@@ -30,6 +30,8 @@ GOOGLE_SERVICE_ACCOUNT_INFO = {
     "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/sheetdata%40goldbot-309200.iam.gserviceaccount.com"
 }
 
+BOT_REPORT_GOOGLE_SHEET_ID = '1GtXHrWe_VGdQYYyfeTiUxYKCo2P3bErYm-ofHdH8Ptk'
+
 IN_GAME_ID_COLUMN_NAME = 'id'
 
 
@@ -47,7 +49,6 @@ class Sheet:
 
     def __getattr__(self, item):
         return self._data.get(item)
-
 
 
 KILL_SHEET = Sheet(

@@ -6,6 +6,7 @@ import discord
 from discord.ext import commands
 
 import settings
+from etl.db_to_sheet import dump_records_to_sheet
 from settings.discord_guild_settings import GuildSettings
 from transactions import events
 from transactions.alliances import update_alliance
@@ -243,6 +244,16 @@ class OfficerOnly(commands.Cog):
             return await ctx.send(f"Error: {gov_id=} does not exist.")
         add_player_note(gov_id, note_type, note)
         await ctx.message.add_reaction(settings.get('SUCCEED_EMOJI'))
+
+    @commands.command('report', help='report records submitted by player')
+    async def report(self, ctx, *, event_name):
+        try:
+            sheet_link = dump_records_to_sheet(event_name, settings.get("BOT_REPORT_GOOGLE_SHEET_ID"))
+        except Exception as e:
+            logger.exception(f'Not able to generate report for {event_name}')
+            await ctx.send(f'Error: {e}')
+        else:
+            await ctx.send(f"Here is the sheet {sheet_link}")
 
 
 class Admin(commands.Cog):
