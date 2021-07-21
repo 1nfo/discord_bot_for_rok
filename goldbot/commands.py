@@ -227,7 +227,7 @@ class OfficerOnly(commands.Cog):
             return await ctx.send(f'new name is same as old name.')
 
         # not tag for add command for non-forwarding message
-        message = _format_message(ctx, gov_id=gov_id, oldname=gov_id.current_name, newname=name, tag_author=False)
+        message = _format_message(ctx, gov_id=gov_id, oldname=player.current_name, newname=name, tag_author=False)
         await _reply_for_approval(ctx, message)
 
     @commands.command('note', help='add note to player')

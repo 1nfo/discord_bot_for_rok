@@ -103,5 +103,5 @@ def upsert_player(gov_id, name, alliance: Union[str, None] = _UNDEFINED, discord
 
 
 def _fuzzy_match(name, chooses):
-    result = process.extractOne(name, chooses, score_cutoff=60)
+    result = process.extractOne(name, chooses, score_cutoff=65)
     return result and result[0]
