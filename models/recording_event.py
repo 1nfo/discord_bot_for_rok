@@ -23,3 +23,6 @@ class RecordingEvent(Base):
             return e
         else:
             return cls.create(status=cls.Status.Open, name=f'auto-event {datetime.datetime.now()}')
+
+    def to_text(self):
+        return f'name:{self.name}, status: {self.Status(self.status).name}, datetime_created: {self.datetime_created}'

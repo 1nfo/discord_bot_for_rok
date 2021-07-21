@@ -280,9 +280,9 @@ class Admin(commands.Cog):
     @commands.command('event', help='event')
     async def event(self, ctx, command=None, *, arg=None):
         if command is None:
-            await ctx.send("\n".join([f"{t.__data__}`" for t in events.list_all_events()]))
+            await ctx.send("\n".join([f"`{t.to_text()}`" for t in events.list_all_events()]))
         elif command == 'add':
-            await ctx.send(f'{events.add_new_event(arg).__data__}')
+            await ctx.send(f'{events.add_new_event(arg).to_text()}')
         elif command == 'rename':
             await ctx.send(f'{events.rename(*arg.split(" ", maxsplit=1))}')
         elif command == 'open':
