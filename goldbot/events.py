@@ -19,7 +19,6 @@ async def on_raw_reaction_add(payload):
     # ignore recursive reaction
     if payload.user_id == bot.user.id:
         return
-
     # ignore reaction on non bot's message
     channel = await bot.fetch_channel(payload.channel_id)
     message = await channel.fetch_message(payload.message_id)
@@ -37,11 +36,11 @@ async def on_raw_reaction_add(payload):
         return await handle_pm_reaction.execute(message, payload.emoji.name, bot.guilds)
 
     if payload.guild_id:
-        guild_settings = GuildSettings.get(id=payload.guild_id)
+        guild_settings = GuildSettings.get(name='kingdom')
         if not guild_settings:
             return
 
-        guild = discord.utils.get(bot.guilds, id=GuildSettings.get(name='kingdom').id)
+        guild = discord.utils.get(bot.guilds, id=guild_settings.id)
         if not has_role(guild, guild_settings.approver_role_id, payload.member.id):
             return
 
