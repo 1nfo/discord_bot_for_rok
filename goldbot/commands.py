@@ -18,7 +18,7 @@ from transactions.players import (
     get_identity_by_gov_id,
     get_linkages_by_discord_id,
 )
-from .utils import has_attachment, enabled_by, number, get_alliance_name, no_raise
+from .utils import has_attachment, enabled_by, number, get_alliance_name, no_raise, discord_mention
 
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
@@ -27,8 +27,9 @@ logger = logging.getLogger(__name__)
 
 class Query(commands.Cog):
     @commands.command("myinfo", help="check your info.")
-    async def my_info(self, ctx):
-        _refresh_alliance(_get_player_by_ctx(ctx), ctx, ctx.message.author.id)
+    async def my_info(self, ctx, mention: discord_mention = None):
+        discord_id = mention or ctx.message.author.id
+        _refresh_alliance(_get_player_by_ctx(ctx, discord_id), ctx, discord_id)
         for linkage in get_linkages_by_discord_id(ctx.message.author.id):
             records = {r.type: r.value for r in linkage.player.get_recent_records()}
             message = f"Your {linkage.type.name} account:" + _format_message(
@@ -314,9 +315,10 @@ def _format_message(ctx, tag_author=True, append_attachment=True, show_command=T
     return '\n'.join(lines_to_send)
 
 
-def _get_player_by_ctx(ctx):
-    player = get_player_by_discord_id(ctx.message.author.id)
-    if player:
+def _get_player_by_ctx(ctx, discord_id=None):
+    if discord_id is None:
+        discord_id = ctx.message.author.id
+    if player := get_player_by_discord_id(discord_id):
         return player
 
     raise commands.errors.BadArgument(

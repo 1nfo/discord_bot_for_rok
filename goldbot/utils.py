@@ -1,4 +1,5 @@
 import logging
+import re
 from functools import wraps
 
 import discord
@@ -9,6 +10,12 @@ import settings
 
 def number(s):
     return int(s.replace(',', ''))
+
+
+def discord_mention(s):
+    if not re.match(r"^<@!\d+>$", s):
+        raise errors.BadArgument('Invalid format: please use @username as input')
+    return int(s[3:-1])
 
 
 def has_role(guild, role, user_id):
