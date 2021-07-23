@@ -1,8 +1,8 @@
 import enum
 
-from peewee import ForeignKeyField, IntegerField
+from peewee import ForeignKeyField
 
-from models import Base
+from models import Base, EnumField
 from models.identity import Identity
 from models.player import Player
 
@@ -14,4 +14,4 @@ class IdentityLinkage(Base):
 
     player = ForeignKeyField(Player, unique=True)
     identity = ForeignKeyField(Identity)
-    type = IntegerField(default=Type.Main)
+    type = EnumField(enum_type=Type, default=Type.Main)

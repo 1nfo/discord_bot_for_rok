@@ -15,7 +15,8 @@ from transactions.players import (
     search_player,
     get_player_by_id,
     get_player_by_discord_id,
-    get_identity_by_gov_id
+    get_identity_by_gov_id,
+    get_linkages_by_discord_id,
 )
 from .utils import has_attachment, enabled_by, number, get_alliance_name, no_raise
 
@@ -27,14 +28,15 @@ logger = logging.getLogger(__name__)
 class Query(commands.Cog):
     @commands.command("myinfo", help="check your info.")
     async def my_info(self, ctx):
-        player = _get_player_by_ctx(ctx)
-        _refresh_alliance(player, ctx, ctx.message.author.id)
-        message = _format_message(
-            ctx, gov_id=player.gov_id, name=player.current_name, alliance=player.alliance.name, tag_author=False)
-        records = {r.type: r.value for r in player.get_recent_records()}
-        if records:
-            message += f"Your previous submission:" + _format_message(ctx, tag_author=False, **records)
-        return await ctx.send(message)
+        _refresh_alliance(_get_player_by_ctx(ctx), ctx, ctx.message.author.id)
+        for linkage in get_linkages_by_discord_id(ctx.message.author.id):
+            records = {r.type: r.value for r in linkage.player.get_recent_records()}
+            message = f"Your {linkage.type.name} account:" + _format_message(
+                ctx, tag_author=False, show_command=False,
+                gov_id=linkage.player.gov_id, name=linkage.player.current_name, alliance=linkage.player.alliance.name,
+                **records
+            )
+            await ctx.send(message)
 
     @commands.command("whois", help="look up member by name or id.")
     async def whois(self, ctx, *, name_or_id):
@@ -97,8 +99,7 @@ class PMCommand(commands.Cog):
         # discord is not linked
         discord_id = ctx.message.author.id
 
-        player = get_player_by_discord_id(discord_id)
-        if player:
+        if player := get_player_by_discord_id(discord_id):
             return await ctx.send(f'You are already linked to gov_id: {player.gov_id}')
 
         # player is not linked
@@ -293,12 +294,14 @@ class Admin(commands.Cog):
             await ctx.send(f'{command} not recognized')
 
 
-def _format_message(ctx, tag_author=True, append_attachment=True, **kwargs):
+def _format_message(ctx, tag_author=True, append_attachment=True, show_command=True, **kwargs):
     lines_to_send = []
     if tag_author:
         lines_to_send += [ctx.message.author.mention]
 
-    arguments = [('command', ctx.command.name)]
+    arguments = []
+    if show_command:
+        arguments.append(('command', ctx.command.name))
     arguments += kwargs.items()
 
     lines_to_send += ['```']

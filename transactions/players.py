@@ -20,15 +20,17 @@ def get_identity_by_gov_id(gov_id):
 
 def get_player_by_discord_id(discord_id):
     linkage = IdentityLinkage.select().join(Identity).where(
-        (Identity.external_id == discord_id) & (Identity.type == Identity.Type.Discord)
-    ).order_by(IdentityLinkage.type.asc()).first()
+        (Identity.external_id == discord_id) &
+        (Identity.type == Identity.Type.Discord) &
+        (IdentityLinkage.type == IdentityLinkage.Type.Main)
+    ).first()
     return linkage.player if linkage else None
 
 
-def get_players_by_discord_id(discord_id):
-    return list(IdentityLinkage.select().join(Identity).where(
+def get_linkages_by_discord_id(discord_id):
+    return IdentityLinkage.select().join(Identity).where(
         (Identity.external_id == discord_id) & (Identity.type == Identity.Type.Discord)
-    ).order_by(IdentityLinkage.type.asc()))
+    ).order_by(IdentityLinkage.type.asc())
 
 
 def search_player(name):

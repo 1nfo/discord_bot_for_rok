@@ -1,9 +1,9 @@
 import datetime
 import enum
 
-from peewee import CharField, IntegerField
+from peewee import CharField
 
-from models import Base
+from models import Base, EnumField
 
 
 class RecordingEvent(Base):
@@ -14,7 +14,7 @@ class RecordingEvent(Base):
         Closed = 2
 
     name = CharField(unique=True)
-    status = IntegerField(choices=Status.__members__.values(), default=Status.Pending)
+    status = EnumField(enum_type=Status, default=Status.Pending)
 
     @classmethod
     def current_event(cls):
@@ -25,4 +25,4 @@ class RecordingEvent(Base):
             return cls.create(status=cls.Status.Open, name=f'auto-event {datetime.datetime.now()}')
 
     def to_text(self):
-        return f'name:{self.name}, status: {self.Status(self.status).name}, datetime_created: {self.datetime_created}'
+        return f'name:{self.name}, status: {self.status.name}, datetime_created: {self.datetime_created}'
