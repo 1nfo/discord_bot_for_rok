@@ -1,6 +1,5 @@
 import locale
 import logging
-import re
 
 import discord
 from discord.ext import commands
@@ -27,10 +26,10 @@ logger = logging.getLogger(__name__)
 
 class Query(commands.Cog):
     @commands.command("myinfo", help="check your info.")
-    async def my_info(self, ctx, mention: discord_mention = None):
-        discord_id = mention or ctx.message.author.id
+    async def my_info(self, ctx, discord_id: discord_mention = None):
+        discord_id = discord_id or ctx.message.author.id
         _refresh_alliance(_get_player_by_ctx(ctx, discord_id), ctx, discord_id)
-        for linkage in get_linkages_by_discord_id(ctx.message.author.id):
+        for linkage in get_linkages_by_discord_id(discord_id):
             records = {r.type: r.value for r in linkage.player.get_recent_records()}
             message = f"Your {linkage.type.name} account:" + _format_message(
                 ctx, tag_author=False, show_command=False,
@@ -195,12 +194,7 @@ class OfficerOnly(commands.Cog):
         await _reply_for_approval(ctx, message)
 
     @commands.command("link", help="link player to discord account.")
-    async def link(self, ctx, mention, gov_id: number, *, name: str = ''):
-        if not re.match(r"^<@!\d+>$", mention):
-            return await ctx.send(f"please @ the user to link to: `!link @username {gov_id} {name}`")
-        else:
-            discord_id = int(mention[3:-1])
-
+    async def link(self, ctx, discord_id: discord_mention, gov_id: number, *, name: str = ''):
         name = name or getattr(get_player_by_id(gov_id), 'current_name', None)
         if not name:
             return await ctx.send(f"Please provide in-game name as well: `!link @usename {gov_id} <player_name>`")

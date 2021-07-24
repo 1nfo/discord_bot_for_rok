@@ -14,7 +14,7 @@ def number(s):
 
 def discord_mention(s):
     if not re.match(r"^<@!\d+>$", s):
-        raise errors.BadArgument('Invalid format: please use @username as input')
+        raise errors.BadArgument(f'Invalid format: {s} - please use @username as input')
     return int(s[3:-1])
 
 
