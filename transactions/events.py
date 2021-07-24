@@ -3,6 +3,7 @@ from collections import defaultdict
 from pandas import DataFrame
 
 from models import RecordingEvent as Event
+from transactions import players
 
 
 def list_all_events():
@@ -51,6 +52,7 @@ def report_event(event):
         dict(
             gov_id=player.gov_id,
             name=player.current_name,
+            main_account=players.get_main_account(player.gov_id).current_name,
             alliance=player.alliance_name,
             **records
         )

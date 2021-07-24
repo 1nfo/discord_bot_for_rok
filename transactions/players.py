@@ -11,6 +11,10 @@ def get_player_by_id(gov_id):
     return Player.get_or_none(gov_id=gov_id)
 
 
+def get_main_account(gov_id):
+    return get_player_by_discord_id(get_identity_by_gov_id(gov_id).external_id)
+
+
 def get_identity_by_gov_id(gov_id):
     linkage = IdentityLinkage.select().join(Player).where(
         Player.gov_id == gov_id
