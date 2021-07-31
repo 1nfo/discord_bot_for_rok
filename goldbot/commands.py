@@ -106,7 +106,7 @@ class PMCommand(commands.Cog):
         if get_identity_by_gov_id(gov_id):
             return await ctx.send(f"The gov_id {gov_id} has been linked already")
 
-        name = name or getattr(get_player_by_id(gov_id), 'current_name', None)
+        name = name or _get_player_by_id(gov_id).current_name
         if not name:
             return await ctx.send(f"Please provide in-game name as well: `!link @usename {gov_id} <player_name>`")
 
@@ -121,7 +121,7 @@ class PMCommand(commands.Cog):
     @enabled_by('DM_COMMAND_MY_KILL_ENABLED')
     async def my_kill(self, ctx, t4: number, t5: number, death: number, gov_id: number = None):
         # find player either by linkage or provided gov id
-        player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
+        player = _get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
 
         has_attachment(ctx)
 
@@ -141,7 +141,7 @@ class PMCommand(commands.Cog):
             gov_id: number = None
     ):
         # find player either by linkage or provided gov id
-        player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
+        player = _get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
 
         has_attachment(ctx)
 
@@ -159,7 +159,7 @@ class PMCommand(commands.Cog):
     @enabled_by('DM_COMMAND_MY_SCORE_ENABLED')
     async def my_score(self, ctx, stage: int, score: number, gov_id: number = None):
         # find player either by linkage or provided gov id
-        player = get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
+        player = _get_player_by_id(gov_id) if gov_id else _get_player_by_ctx(ctx)
 
         # validate stage
         if stage not in (1, 2, 3):
@@ -195,7 +195,7 @@ class OfficerOnly(commands.Cog):
 
     @commands.command("link", help="link player to discord account.")
     async def link(self, ctx, discord_id: discord_mention, gov_id: number, *, name: str = ''):
-        name = name or getattr(get_player_by_id(gov_id), 'current_name', None)
+        name = name or _get_player_by_id(gov_id).current_name
         if not name:
             return await ctx.send(f"Please provide in-game name as well: `!link @usename {gov_id} <player_name>`")
 
@@ -337,3 +337,10 @@ def _refresh_alliance(player, ctx, discord_id):
         guild = discord.utils.get(ctx.bot.guilds, id=GuildSettings.get(name='kingdom').id)
         alliance_name = get_alliance_name(guild, discord_id)
         update_alliance(player, alliance_name)
+
+
+def _get_player_by_id(gov_id):
+    if player := get_player_by_id(gov_id):
+        return player
+    else:
+        raise commands.errors.BadArgument(f'{gov_id=} does not exist, please add this account first.')

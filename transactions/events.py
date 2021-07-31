@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from pandas import DataFrame
+import numpy as np
 
 from models import RecordingEvent as Event
 from transactions import players
@@ -57,4 +58,4 @@ def report_event(event):
             **records
         )
         for player, records in report_data.items()
-    ])
+    ]).replace(np.nan, '', regex=True)
