@@ -136,8 +136,8 @@ class PMCommand(commands.Cog):
     @enabled_by('DM_COMMAND_MY_DEATH_ENABLED')
     async def my_death(
             self, ctx,
-            t4_cav: number, t4_inf: number, t4_archer: number, t4_siege: number,
             t5_cav: number, t5_inf: number, t5_archer: number, t5_siege: number,
+            t4_cav: number, t4_inf: number, t4_archer: number, t4_siege: number,
             gov_id: number = None
     ):
         # find player either by linkage or provided gov id
@@ -147,10 +147,10 @@ class PMCommand(commands.Cog):
 
         message = _format_message(
             ctx, gov_id=player.gov_id, name=player.current_name,
-            t4_cav_death=f'{t4_cav:,}', t4_inf_death=f'{t4_inf:,}',
-            t4_archer_death=f'{t4_archer:,}', t4_siege_death=f'{t4_siege:,}',
             t5_cav_death=f'{t5_cav:,}', t5_inf_death=f'{t5_inf:,}',
             t5_archer_death=f'{t5_archer:,}', t5_siege_death=f'{t5_siege:,}',
+            t4_cav_death=f'{t4_cav:,}', t4_inf_death=f'{t4_inf:,}',
+            t4_archer_death=f'{t4_archer:,}', t4_siege_death=f'{t4_siege:,}',
         )
 
         await _reply_for_approval(ctx, message)
